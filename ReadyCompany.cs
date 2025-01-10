@@ -1,11 +1,8 @@
-using System;
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
-using LobbyCompatibility.Attributes;
 using LobbyCompatibility.Enums;
 using LobbyCompatibility.Features;
-using UnityEngine.InputSystem;
 
 namespace ReadyCompany;
 
@@ -25,12 +22,10 @@ public class ReadyCompany : BaseUnityPlugin
     {
         Logger = base.Logger;
         Instance = this;
-        if (BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("BMX.LobbyCompatibility"))
-        {
-            PluginHelper.RegisterPlugin(MyPluginInfo.PLUGIN_GUID, new(MyPluginInfo.PLUGIN_VERSION), CompatibilityLevel.ServerOnly, VersionStrictness.Major);
-        }
 
-        InputActions = new ReadyInputs();
+        if (BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("BMX.LobbyCompatibility"))
+            PluginHelper.RegisterPlugin(MyPluginInfo.PLUGIN_GUID, new(MyPluginInfo.PLUGIN_VERSION), CompatibilityLevel.ServerOnly, VersionStrictness.Major);
+        
         ReadyHandler.InitializeEvents();
 
         Patch();
