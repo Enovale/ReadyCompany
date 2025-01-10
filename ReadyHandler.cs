@@ -1,59 +1,98 @@
 using System.Collections.Generic;
 using System.Linq;
 using LethalNetworkAPI;
+using LethalNetworkAPI.Utils;
 using UnityEngine.InputSystem;
-using UnityEngine.Rendering;
 
 namespace ReadyCompany
 {
     public class ReadyHandler
     {
         private const string PLAYERS_READY_SIG = MyPluginInfo.PLUGIN_GUID + "_playersReadyVar";
+        private const string PLAYERS_CONNECTED_SIG = MyPluginInfo.PLUGIN_GUID + "_playersConnectedVar";
         private const string READY_EVENT_SIG = MyPluginInfo.PLUGIN_GUID + "_playerReadyEvent";
 
-        public static LethalNetworkVariable<int> PlayersReady { get; } = new(identifier: PLAYERS_READY_SIG);
+        public static LNetworkVariable<int> PlayersReady { get; } = LNetworkVariable<int>.Connect(identifier: PLAYERS_READY_SIG, onValueChanged: PlayersReadyChanged);
+        public static LNetworkVariable<int> ConnectedPlayers { get; } = LNetworkVariable<int>.Connect(identifier: PLAYERS_CONNECTED_SIG, onValueChanged: PlayersConnectedChanged);
+
+        private static readonly LNetworkMessage<bool> readyUpMessage = LNetworkMessage<bool>.Connect(identifier: READY_EVENT_SIG, ReadyUpFromClient, ReadyUpFromServer);
+
+        private static readonly Dictionary<ulong, bool> _playerReadyMap = new();
         
-        private static LethalServerMessage<bool> readyUpServerMessage = new(identifier: READY_EVENT_SIG);
-        private static LethalClientMessage<bool> readyUpClientMessage = new(identifier: READY_EVENT_SIG);
-
-        private static Dictionary<ulong, bool> _playerReadyMap = new();
-
-        private static int LobbySize => StartOfRound.Instance.connectedPlayersAmount + 1;
+        private static int ServerLobbySize => StartOfRound.Instance == null ? -1 : StartOfRound.Instance.fullyLoadedPlayers.Count;
 
         internal static void InitializeEvents()
         {
-            ReadyCompany.InputActions.ReadyKey.performed += ReadyKeyPerformed;
-            readyUpServerMessage.OnReceived += ReadyUpFromClient;
-            readyUpClientMessage.OnReceived += ReadyUpFromServer;
-            PlayersReady.OnValueChanged += PlayersReadyChanged;
-            PlayersReady.Value = 0;
+            LNetworkUtils.OnNetworkStart += b =>
+            {
+                UpdateReadyMap();
+                
+                // Specifically when using a KbmInteraction of some kind, this code needs to be deferred
+                // So that the input system is initialized. I don't like it being here but it works for now...
+                ReadyCompany.InputActions = new ReadyInputs();
+                ReadyCompany.InputActions.ReadyInput.performed += ReadyInputPerformed;
+                ReadyCompany.InputActions.UnreadyInput.performed += UnreadyInputPerformed;
+            };
+        }
+
+        public static void ResetReadyUp()
+        {
+            _playerReadyMap.Clear();
+        }
+
+        internal static void OnClientConnected()
+        {
+            ConnectedPlayers.Value = ServerLobbySize;
+            UpdateReadyMap();
+        }
+
+        internal static void OnClientDisconnected()
+        {
+            ConnectedPlayers.Value = ServerLobbySize;
+            UpdateReadyMap();
         }
 
         private static void ReadyUpFromServer(bool isReady)
         {
-            ReadyCompany.Logger.LogDebug("Ready up from server!");
+            ReadyCompany.Logger.LogDebug($"Ready up from server: {isReady}");
         }
 
-        private static void PlayersReadyChanged(int playersReady)
+        private static void PlayersReadyChanged(int oldValue, int newValue)
+        {
+            PopupReadyStatus(newValue, ConnectedPlayers.Value);
+        }
+
+        private static void PlayersConnectedChanged(int oldValue, int newValue)
+        {
+            PopupReadyStatus(PlayersReady.Value, newValue);
+        }
+
+        private static void PopupReadyStatus(int playersReady, int lobbySize)
         {
             if (HUDManager.Instance == null)
                 return;
             
-            HUDManager.Instance.DisplayTip("Ready Up!", $"{PlayersReady.Value} / {LobbySize} Players are ready.", prefsKey: MyPluginInfo.PLUGIN_GUID + "_ReadyTip");
-            HUDManager.Instance.DisplaySpectatorTip($"{PlayersReady.Value} / {LobbySize} Players are ready.");
+            HUDManager.Instance.DisplayTip("Ready Up!", $"{playersReady} / {lobbySize} Players are ready.", prefsKey: MyPluginInfo.PLUGIN_GUID + "_ReadyTip");
+            HUDManager.Instance.DisplaySpectatorTip($"{playersReady} / {lobbySize} Players are ready.");
         }
 
-        // Sloppy, doesn't tell clients about any errors caught but I don't wanna cause extra tip noises
-        // Unless something has actually changed, maybe use the server message data that is currently unused
-        // To encode if something actually changed and only play a sound if that's true
         private static void ReadyUpFromClient(bool isReady, ulong clientId)
         {
+            if (!StartOfRound.Instance.inShipPhase)
+                return;
+            
             _playerReadyMap[clientId] = isReady;
 
+            UpdateReadyMap();
+            ReadyCompany.Logger.LogDebug($"Ready up from client: {PlayersReady.Value} and {_playerReadyMap[clientId]}");
+        }
+
+        private static void UpdateReadyMap()
+        {
             VerifyReadyUpMap();
 
             PlayersReady.Value = _playerReadyMap.Count(kvp => kvp.Value);
-            ReadyCompany.Logger.LogDebug($"Ready up from client: {PlayersReady.Value} and {_playerReadyMap[clientId]}");
+            ConnectedPlayers.Value = ServerLobbySize;
         }
 
         private static void VerifyReadyUpMap()
@@ -64,9 +103,14 @@ namespace ReadyCompany
             }
         }
 
-        public static void ReadyKeyPerformed(InputAction.CallbackContext context)
+        public static void ReadyInputPerformed(InputAction.CallbackContext context)
         {
-            readyUpClientMessage.SendServer(true);
+            readyUpMessage.SendServer(true);
+        }
+
+        private static void UnreadyInputPerformed(InputAction.CallbackContext context)
+        {
+            readyUpMessage.SendServer(false);
         }
     }
 }
