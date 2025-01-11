@@ -8,12 +8,14 @@ namespace ReadyCompany
 {
     public class ReadyHandler
     {
-        private const string PLAYERS_READY_SIG = MyPluginInfo.PLUGIN_GUID + "_playersReadyVar";
-        private const string PLAYERS_CONNECTED_SIG = MyPluginInfo.PLUGIN_GUID + "_playersConnectedVar";
+        private const string READY_STATUS_SIG = MyPluginInfo.PLUGIN_GUID + "_readyStatusVar";
         private const string READY_EVENT_SIG = MyPluginInfo.PLUGIN_GUID + "_playerReadyEvent";
+        
+        internal const string LEVER_DISABLED_TIP = "[ Lobby must be ready to start ]";
+        internal const string LEVER_WARNING_TIP = "[ WARNING: Lobby Not Ready ]";
+        internal const string LEVER_NORMAL_TIP = "Start game : [LMB]";
 
-        public static LNetworkVariable<int> PlayersReady { get; } = LNetworkVariable<int>.Connect(identifier: PLAYERS_READY_SIG, onValueChanged: PlayersReadyChanged);
-        public static LNetworkVariable<int> ConnectedPlayers { get; } = LNetworkVariable<int>.Connect(identifier: PLAYERS_CONNECTED_SIG, onValueChanged: PlayersConnectedChanged);
+        public static LNetworkVariable<ReadyStatus> ReadyStatus { get; } = LNetworkVariable<ReadyStatus>.Connect(identifier: READY_STATUS_SIG, onValueChanged: ReadyStatusChanged);
 
         private static readonly LNetworkMessage<bool> readyUpMessage = LNetworkMessage<bool>.Connect(identifier: READY_EVENT_SIG, ReadyUpFromClient, ReadyUpFromServer);
 
@@ -23,6 +25,7 @@ namespace ReadyCompany
 
         internal static void InitializeEvents()
         {
+            ReadyStatus.Value = new(0, 0);
             LNetworkUtils.OnNetworkStart += b =>
             {
                 UpdateReadyMap();
@@ -35,20 +38,22 @@ namespace ReadyCompany
             };
         }
 
+        public static bool IsLobbyReady(ReadyStatus status) => status.PlayersReady / status.LobbySize >=
+                                                        ReadyCompany.Config.PercentageForReady.Value / 100;
+
         public static void ResetReadyUp()
         {
             _playerReadyMap.Clear();
+            UpdateReadyMap();
         }
 
         internal static void OnClientConnected()
         {
-            ConnectedPlayers.Value = ServerLobbySize;
             UpdateReadyMap();
         }
 
         internal static void OnClientDisconnected()
         {
-            ConnectedPlayers.Value = ServerLobbySize;
             UpdateReadyMap();
         }
 
@@ -57,42 +62,60 @@ namespace ReadyCompany
             ReadyCompany.Logger.LogDebug($"Ready up from server: {isReady}");
         }
 
-        private static void PlayersReadyChanged(int oldValue, int newValue)
+        private static void ReadyStatusChanged(ReadyStatus oldValue, ReadyStatus newValue)
         {
-            PopupReadyStatus(newValue, ConnectedPlayers.Value);
+            PopupReadyStatus(newValue);
+            ReadyCompany.Logger.LogDebug($"Ready status changed: {newValue.PlayersReady}, {newValue.LobbySize}");
         }
 
-        private static void PlayersConnectedChanged(int oldValue, int newValue)
+        private static void PopupReadyStatus(ReadyStatus status)
         {
-            PopupReadyStatus(PlayersReady.Value, newValue);
-        }
-
-        private static void PopupReadyStatus(int playersReady, int lobbySize)
-        {
-            if (HUDManager.Instance == null)
+            if (HUDManager.Instance == null || !StartOfRound.Instance.inShipPhase)
                 return;
             
-            HUDManager.Instance.DisplayTip("Ready Up!", $"{playersReady} / {lobbySize} Players are ready.", prefsKey: MyPluginInfo.PLUGIN_GUID + "_ReadyTip");
-            HUDManager.Instance.DisplaySpectatorTip($"{playersReady} / {lobbySize} Players are ready.");
+            HUDManager.Instance.DisplayTip("Ready Up!", $"{status.PlayersReady} / {status.LobbySize} Players are ready.", prefsKey: MyPluginInfo.PLUGIN_GUID + "_ReadyTip");
+            HUDManager.Instance.DisplaySpectatorTip($"{status.PlayersReady} / {status.LobbySize} Players are ready.");
+            UpdateShipLever(status);
+        }
+
+        private static void UpdateShipLever(ReadyStatus status)
+        {
+            var lever = UnityEngine.Object.FindObjectOfType<StartMatchLever>();
+            var lobbyReady = IsLobbyReady(status);
+            if (ReadyCompany.Config.RequireReadyToStart.Value)
+            {
+                lever.triggerScript.disabledHoverTip = lobbyReady ? "" : LEVER_DISABLED_TIP;
+                lever.triggerScript.hoverTip = lobbyReady ? LEVER_NORMAL_TIP : LEVER_WARNING_TIP;
+                lever.triggerScript.interactable = lobbyReady || LNetworkUtils.IsHostOrServer;
+            }
+            else if (lever.triggerScript.disabledHoverTip == LEVER_DISABLED_TIP)
+            {
+                lever.triggerScript.disabledHoverTip = "";
+                lever.triggerScript.hoverTip = LEVER_NORMAL_TIP;
+                lever.triggerScript.interactable = true;
+            }
+
+            if (ReadyCompany.Config.AutoStartWhenReady.Value && LNetworkUtils.IsHostOrServer && lobbyReady)
+            {
+                lever.LeverAnimation();
+                lever.PullLever();
+            }
         }
 
         private static void ReadyUpFromClient(bool isReady, ulong clientId)
         {
-            if (!StartOfRound.Instance.inShipPhase)
-                return;
-            
             _playerReadyMap[clientId] = isReady;
 
             UpdateReadyMap();
-            ReadyCompany.Logger.LogDebug($"Ready up from client: {PlayersReady.Value} and {_playerReadyMap[clientId]}");
+            ReadyCompany.Logger.LogDebug($"Ready up from client: {ReadyStatus.Value} and {_playerReadyMap[clientId]}");
         }
 
-        private static void UpdateReadyMap()
+        public static void UpdateReadyMap()
         {
             VerifyReadyUpMap();
 
-            PlayersReady.Value = _playerReadyMap.Count(kvp => kvp.Value);
-            ConnectedPlayers.Value = ServerLobbySize;
+            ReadyStatus.Value = new(_playerReadyMap.Count(kvp => kvp.Value), ServerLobbySize);
+            ReadyStatus.MakeDirty();
         }
 
         private static void VerifyReadyUpMap()
