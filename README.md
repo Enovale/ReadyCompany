@@ -9,8 +9,9 @@ eaten by a dog when they come back from eating.
 
 ## Known Issues
 
-TBD
+- No testing has been done for memory leaks or non-obvious bugs
+- TBD
 
 ## Planned Features
 
-TBD
+- TBD
