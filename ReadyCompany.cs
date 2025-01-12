@@ -1,12 +1,12 @@
 using BepInEx;
 using BepInEx.Logging;
-using CSync.Lib;
 using HarmonyLib;
 using LethalConfig;
 using LethalConfig.ConfigItems;
 using LethalConfig.ConfigItems.Options;
 using LobbyCompatibility.Enums;
 using LobbyCompatibility.Features;
+using ReadyCompany.Patches;
 
 namespace ReadyCompany;
 
@@ -21,7 +21,7 @@ public class ReadyCompany : BaseUnityPlugin
     public static ReadyCompany Instance { get; private set; } = null!;
     internal new static ManualLogSource Logger { get; private set; } = null!;
     internal static Harmony? Harmony { get; set; }
-    internal static ReadyInputs InputActions { get; set; } = null!;
+    internal static ReadyInputs? InputActions { get; set; }
     internal new static ReadyCompanyConfig Config = null!; 
 
     private void Awake()
@@ -58,6 +58,7 @@ public class ReadyCompany : BaseUnityPlugin
         Logger.LogDebug("Patching...");
 
         Harmony.PatchAll();
+        JoinPatches.Init();
 
         Logger.LogDebug("Finished patching!");
     }

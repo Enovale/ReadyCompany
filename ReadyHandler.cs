@@ -1,16 +1,14 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using LethalNetworkAPI;
 using LethalNetworkAPI.Utils;
 using ReadyCompany.Patches;
-using Unity.Netcode;
 using UnityEngine.InputSystem;
 
 namespace ReadyCompany
 {
-    public class ReadyHandler
+    public static class ReadyHandler
     {
         private const string READY_STATUS_SIG = MyPluginInfo.PLUGIN_GUID + "_readyStatusVar";
         private const string READY_EVENT_SIG = MyPluginInfo.PLUGIN_GUID + "_playerReadyEvent";
@@ -21,35 +19,40 @@ namespace ReadyCompany
 
         public static LNetworkVariable<ReadyMap> ReadyStatus { get; } = LNetworkVariable<ReadyMap>.Connect(identifier: READY_STATUS_SIG, onValueChanged: ReadyStatusChanged);
 
-        private static readonly LNetworkMessage<bool> readyUpMessage = LNetworkMessage<bool>.Connect(identifier: READY_EVENT_SIG, ReadyUpFromClient, ReadyUpFromServer);
+        private static readonly LNetworkMessage<bool> readyUpMessage = LNetworkMessage<bool>.Connect(identifier: READY_EVENT_SIG, ReadyUpFromClient);
 
-        private static readonly Dictionary<ulong, bool> _playerReadyMap = new();
+        private static readonly Dictionary<int, bool> _playerReadyMap = new();
         
         public static event Action<ReadyMap>? NewReadyStatus;
+
+        public static ulong? ActualLocalClientId => StartOfRound.Instance?.localPlayerController?.actualClientId;
+        public static int? LocalPlayerId => !ActualLocalClientId.HasValue ? null : (StartOfRound.Instance?.ClientPlayerList.TryGetValue((ulong)ActualLocalClientId, out var result) ?? false ? result : null);
 
         internal static void InitializeEvents()
         {
             ReadyStatus.Value = new(_playerReadyMap);
             LNetworkUtils.OnNetworkStart += b =>
             {
-                UpdateReadyMap();
-                
                 // Specifically when using a KbmInteraction of some kind, this code needs to be deferred
                 // So that the input system is initialized. I don't like it being here but it works for now...
-                ReadyCompany.InputActions = new ReadyInputs();
+                ReadyCompany.InputActions ??= new ReadyInputs();
                 ReadyCompany.InputActions.ReadyInput.performed += ReadyInputPerformed;
                 ReadyCompany.InputActions.UnreadyInput.performed += UnreadyInputPerformed;
             };
-            NewReadyStatus += map => { if (HUDPatches.ReadyStatusTextMesh != null) HUDPatches.ReadyStatusTextMesh.text = GetBriefStatusDisplay(map); };
+            NewReadyStatus += HUDPatches.UpdateTextBasedOnStatus;
         }
 
         public static bool IsLobbyReady(ReadyMap map) => map.LobbySize > 0 && map.PlayersReady / map.LobbySize >=
             ReadyCompany.Config.PercentageForReady.Value / 100;
 
+        // Don't really like this method of forcing an update even if nothing's changed
+        // (noone ready, reset and verify = noone ready still)
         public static void ResetReadyUp()
         {
             _playerReadyMap.Clear();
             UpdateReadyMap();
+            ReadyStatusChangedReal(ReadyStatus.Value);
+            ReadyCompany.Logger.LogDebug("Resetting ready-up");
         }
 
         internal static void OnClientConnected()
@@ -62,40 +65,27 @@ namespace ReadyCompany
             UpdateReadyMap();
         }
 
-        private static void ReadyUpFromServer(bool isReady)
-        {
-            ReadyCompany.Logger.LogDebug($"Ready up from server: {isReady}");
-        }
-
         private static void ReadyStatusChanged(ReadyMap oldValue, ReadyMap? newValue)
         {
-            if (newValue == null || newValue.Empty)
+            if (newValue == null)
                 return;
             
+            ReadyStatusChangedReal(newValue);
+        }
+
+        internal static void ReadyStatusChangedReal(ReadyMap newValue)
+        {
             PopupReadyStatus(newValue);
             NewReadyStatus?.Invoke(newValue);
-            ReadyCompany.Logger.LogDebug($"Ready status changed: {newValue.PlayersReady}, {newValue.LobbySize}");
         }
 
         internal static void PopupReadyStatus(ReadyMap map)
         {
-            if (HUDPatches.ReadyStatusTextMesh != null && HUDPatches.ReadyStatusTextMesh.enabled)
-                HUDPatches.ReadyStatusTextMesh.text = GetBriefStatusDisplay(map);
-            
             if (HUDManager.Instance == null || !StartOfRound.Instance.inShipPhase)
-            {
-                if (HUDPatches.ReadyStatusTextMesh != null)
-                    HUDPatches.ReadyStatusTextMesh.enabled = false;
                 return;
-            }
 
-            ReadyCompany.Logger.LogDebug($"Test map: {map}");
-            ReadyCompany.Logger.LogDebug($"Test map PlayersReady: {map.PlayersReady}");
-            ReadyCompany.Logger.LogDebug($"Test map LobbySize: {map.LobbySize}");
-            ReadyCompany.Logger.LogDebug($"Test map ReadyStates: {map.ReadyStates}");
-            ReadyCompany.Logger.LogDebug($"Test map ClientIds: {map.ClientIds}");
             HUDManager.Instance.DisplayTip("Ready Up!", GetBriefStatusDisplay(map), prefsKey: MyPluginInfo.PLUGIN_GUID + "_ReadyTip");
-            HUDManager.Instance.DisplaySpectatorTip($"{map.PlayersReady} / {map.LobbySize} Players are ready.");
+            //HUDManager.Instance.DisplaySpectatorTip($"{map.PlayersReady} / {map.LobbySize} Players are ready.");
             UpdateShipLever(map);
         }
 
@@ -129,17 +119,15 @@ namespace ReadyCompany
 
         private static void ReadyUpFromClient(bool isReady, ulong clientId)
         {
-            _playerReadyMap[clientId] = isReady;
+            var playerId = TryGetPlayerIdFromClientId(clientId);
+            _playerReadyMap[playerId] = isReady;
 
             UpdateReadyMap();
-            ReadyCompany.Logger.LogDebug($"Ready up from client: {ReadyStatus.Value} and {_playerReadyMap[clientId]}");
         }
 
         public static void UpdateReadyMap()
         {
-            ReadyCompany.Logger.LogDebug($"Ready Map State before verify: {string.Join(", ", _playerReadyMap.Keys)} | {string.Join(", ", _playerReadyMap.Values)}");
             VerifyReadyUpMap();
-            ReadyCompany.Logger.LogDebug($"Ready Map State after verify: {string.Join(", ", _playerReadyMap.Keys)} | {string.Join(", ", _playerReadyMap.Values)}");
             
             ReadyStatus.Value = new(_playerReadyMap);
             ReadyStatus.MakeDirty();
@@ -147,26 +135,25 @@ namespace ReadyCompany
 
         private static void VerifyReadyUpMap()
         {
-            foreach (var (clientid, _) in _playerReadyMap.Where(kvp => !StartOfRound.Instance.ClientPlayerList.ContainsKey(kvp.Key)).ToList())
+            foreach (var (clientId, _) in _playerReadyMap.Where(kvp => kvp.Key != LocalPlayerId && !StartOfRound.Instance.ClientPlayerList.ContainsValue(kvp.Key)).ToList())
             {
-                _playerReadyMap.Remove(clientid);
+                _playerReadyMap.Remove(clientId);
             }
 
             if (StartOfRound.Instance != null)
             {
-                foreach (var clientId in StartOfRound.Instance.ClientPlayerList.Keys)
+                foreach (var (clientId, playerId) in StartOfRound.Instance.ClientPlayerList)
                 {
-                    _playerReadyMap.TryAdd(clientId, false);
+                    _playerReadyMap.TryAdd(playerId, false);
                 }
-            }
-            
-            if (NetworkManager.Singleton != null)
-            {
-                _playerReadyMap.TryAdd(NetworkManager.Singleton.LocalClientId, false);
+                
+                var localPlayerId = LocalPlayerId;
+                if (localPlayerId.HasValue)
+                    _playerReadyMap.TryAdd((int)localPlayerId, false);
             }
         }
 
-        public static void ReadyInputPerformed(InputAction.CallbackContext context)
+        private static void ReadyInputPerformed(InputAction.CallbackContext context)
         {
             readyUpMessage.SendServer(true);
         }
@@ -174,6 +161,11 @@ namespace ReadyCompany
         private static void UnreadyInputPerformed(InputAction.CallbackContext context)
         {
             readyUpMessage.SendServer(false);
+        }
+
+        private static int TryGetPlayerIdFromClientId(ulong clientId)
+        {
+            return (StartOfRound.Instance?.ClientPlayerList.TryGetValue(clientId, out var playerId) ?? false) ? playerId : -1;
         }
     }
 }

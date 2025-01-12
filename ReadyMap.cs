@@ -1,65 +1,27 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
-using Unity.Netcode;
-using UnityEngine.InputSystem.Utilities;
+#pragma warning disable CS0659 // Type overrides Object.Equals(object o) but does not override Object.GetHashCode()
 
 namespace ReadyCompany
 {
     [Serializable]
-    public class ReadyMap
+    public class ReadyMap(IDictionary<int, bool> readyMap) : Dictionary<int, bool>(readyMap.ToDictionary(k => k.Key, e => e.Value))
     {
-        public int PlayersReady;
-        public int LobbySize;
-        public ulong[] ClientIds = null!;
-        public bool[] ReadyStates = null!;
+        public int PlayersReady => this.Count(kvp => kvp.Value);
+        public int LobbySize => Count;
 
-        public bool LocalPlayerReady
-        {
-            get
-            {
-                var clientIndex = ClientIds.IndexOf(NetworkManager.Singleton.LocalClientId);
-                return ClientIds.Length > 0 && ReadyStates.Length > clientIndex && ReadyStates[clientIndex];
-            }
-        }
-
-        public bool Empty => ClientIds.Length <= 0 || ReadyStates.Length <= 0;
-
-        public ReadyMap()
-        {
-            
-        }
-
-        public ReadyMap(IDictionary<ulong, bool> readyMap)
-        {
-            PlayersReady = readyMap.Count(kvp => kvp.Value);
-            LobbySize = readyMap.Count;
-            ClientIds = readyMap.Keys.ToArray();
-            ReadyStates = readyMap.Values.ToArray();
-        }
-
+        public bool LocalPlayerReady => ReadyHandler.LocalPlayerId.HasValue && (TryGetValue((int)ReadyHandler.LocalPlayerId, out var result) && result);
+        
         public override bool Equals(object? obj)
         {
-            ReadyCompany.Logger.LogDebug($"Equals triggered - this: {string.Join(", ", this.ClientIds)} | {string.Join(", ", ReadyStates)}");
-            if (obj is ReadyMap d)
-            {
-                ReadyCompany.Logger.LogDebug(
-                    $"Equals triggered - obj: {string.Join(", ", d.ClientIds)} | {string.Join(", ", d.ReadyStates)}");
-                return d.ClientIds.SequenceEqual(ClientIds) && d.ReadyStates.SequenceEqual(ReadyStates);
-            }
-
-            return base.Equals(obj);
-        }
-
-        public static bool operator ==(ReadyMap obj1, ReadyMap obj2)
-        {
-            return obj1.Equals(obj2);
-        }
-
-        public static bool operator !=(ReadyMap obj1, ReadyMap obj2)
-        {
-            return !(obj1 == obj2);
+            if (obj is null) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != GetType()) return false;
+            
+            var other = (ReadyMap)obj;
+            
+            return other.SequenceEqual(this);
         }
     }
 }

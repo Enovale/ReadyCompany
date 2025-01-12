@@ -6,16 +6,8 @@ namespace ReadyCompany.Patches
     [HarmonyPatch(typeof(StartOfRound))]
     [HarmonyPriority(Priority.HigherThanNormal)]
     [HarmonyWrapSafe]
-    public class StartOfRoundPatches
+    internal class StartOfRoundPatches
     {
-        [HarmonyPatch(nameof(StartOfRound.PlayerLoadedClientRpc))]
-        [HarmonyPostfix]
-        public static void OnClientConnectedPatch()
-        {
-            if (LNetworkUtils.IsHostOrServer)
-                ReadyHandler.OnClientConnected();
-        }
-        
         [HarmonyPatch(nameof(StartOfRound.OnPlayerDC))]
         [HarmonyPostfix]
         public static void OnClientDisconnectedPatch()
@@ -25,11 +17,14 @@ namespace ReadyCompany.Patches
         }
 
         [HarmonyPatch(nameof(StartOfRound.SetShipReadyToLand))]
+        [HarmonyPatch(nameof(StartOfRound.StartGame))]
         [HarmonyPostfix]
         public static void OnShipReadyToLandPatch()
         {
             if (LNetworkUtils.IsHostOrServer)
+            {
                 ReadyHandler.ResetReadyUp();
+            }
         }
     }
 }
