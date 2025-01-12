@@ -1,8 +1,8 @@
 {
   "manifestVersion": 1,
-  "name": "Enova-ReadyCompany",
+  "name": "ReadyCompany",
   "authorName": "Enova",
-  "websiteUrl": "https://github.com/Enovale/ReadyCompany",
+  "website_url": "https://github.com/Enovale/ReadyCompany",
   "displayName": "Ready Company",
   "description": "Adds a Ready Check system during the ship phase to let players make sure everyone is ready.",
   "dependencies": [
