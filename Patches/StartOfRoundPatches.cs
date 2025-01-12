@@ -18,13 +18,11 @@ namespace ReadyCompany.Patches
 
         [HarmonyPatch(nameof(StartOfRound.SetShipReadyToLand))]
         [HarmonyPatch(nameof(StartOfRound.StartGame))]
+        [HarmonyPatch(nameof(StartOfRound.SwitchMapMonitorPurpose))]
         [HarmonyPostfix]
         public static void OnShipReadyToLandPatch()
         {
-            if (LNetworkUtils.IsHostOrServer)
-            {
-                ReadyHandler.ResetReadyUp();
-            }
+            ReadyHandler.ResetReadyUp();
         }
     }
 }

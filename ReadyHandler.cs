@@ -49,8 +49,12 @@ namespace ReadyCompany
         // (noone ready, reset and verify = noone ready still)
         public static void ResetReadyUp()
         {
-            _playerReadyMap.Clear();
-            UpdateReadyMap();
+            if (LNetworkUtils.IsHostOrServer)
+            {
+                _playerReadyMap.Clear();
+                UpdateReadyMap();
+            }
+
             ReadyStatusChangedReal(ReadyStatus.Value);
             ReadyCompany.Logger.LogDebug("Resetting ready-up");
         }
