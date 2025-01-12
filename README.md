@@ -9,9 +9,14 @@ eaten by a dog when they come back from eating.
 
 ## Known Issues
 
-- No testing has been done for memory leaks or non-obvious bugs
-- TBD
+- When the lever hasn't been pulled yet, clients can pull the lever but it will not work.
+- When landing, sometimes the lever will keep the host Warning for all players.
+- Not much testing has been done
 
 ## Planned Features
 
 - TBD
+
+# Credits
+
+mattymatty97 for their implementation of knowing when a player has fully connected: https://github.com/mattymatty97/LTC_LobbyControl

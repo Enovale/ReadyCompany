@@ -5,7 +5,7 @@ namespace ReadyCompany.Patches
     [HarmonyPatch(typeof(StartMatchLever))]
     [HarmonyPriority(Priority.Last)]
     [HarmonyWrapSafe]
-    public class StartMatchLeverPatches
+    internal class StartMatchLeverPatches
     {
         [HarmonyPatch(nameof(StartMatchLever.Update))]
         [HarmonyPrefix]

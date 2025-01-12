@@ -9,19 +9,19 @@ namespace ReadyCompany.Patches
     {
         internal static TextMeshProUGUI? ReadyStatusTextMesh;
 
-        [HarmonyPatch("Awake")]
+        [HarmonyPatch(nameof(HUDManager.Awake))]
         [HarmonyPostfix]
         private static void Start(ref HUDManager __instance)
         {
             var parent = __instance.HUDElements[2].canvasGroup.transform.parent;
-            GameObject val = new GameObject("ReadyStatusDisplay", typeof(TextMeshProUGUI), typeof(CanvasGroup));
+            var val = new GameObject("ReadyStatusDisplay", typeof(TextMeshProUGUI), typeof(CanvasGroup));
             val.transform.SetParent(parent);
             __instance.HUDElements = __instance.HUDElements.AddToArray<HUDElement>(new HUDElement
             {
                 canvasGroup = val.GetComponent<CanvasGroup>(),
                 targetAlpha = 1f
             });
-            RectTransform component = val.GetComponent<RectTransform>();
+            var component = val.GetComponent<RectTransform>();
             component.anchorMax = component.anchorMin = component.pivot = new(1, 0);
             component.sizeDelta = new Vector2(350f, 20f);
             component.localScale = Vector3.one;
@@ -35,7 +35,15 @@ namespace ReadyCompany.Patches
             ReadyStatusTextMesh.overflowMode = 0;
             ReadyStatusTextMesh.enabled = true;
             ReadyStatusTextMesh.text = "Test Test 123123";
-            ReadyHandler.PopupReadyStatus(ReadyHandler.ReadyStatus.Value);
+        }
+
+        public static void UpdateTextBasedOnStatus(ReadyMap status)
+        {
+            if (ReadyStatusTextMesh != null)
+            {
+                ReadyStatusTextMesh.text = ReadyHandler.GetBriefStatusDisplay(status);
+                ReadyStatusTextMesh.enabled = StartOfRound.Instance.inShipPhase;
+            }
         }
     }
 }
