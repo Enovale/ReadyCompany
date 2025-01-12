@@ -69,7 +69,7 @@ namespace ReadyCompany
 
         private static void ReadyStatusChanged(ReadyMap oldValue, ReadyMap? newValue)
         {
-            if (newValue == null)
+            if (newValue == null || newValue.Empty)
                 return;
             
             PopupReadyStatus(newValue);
@@ -77,8 +77,11 @@ namespace ReadyCompany
             ReadyCompany.Logger.LogDebug($"Ready status changed: {newValue.PlayersReady}, {newValue.LobbySize}");
         }
 
-        private static void PopupReadyStatus(ReadyMap map)
+        internal static void PopupReadyStatus(ReadyMap map)
         {
+            if (HUDPatches.ReadyStatusTextMesh != null && HUDPatches.ReadyStatusTextMesh.enabled)
+                HUDPatches.ReadyStatusTextMesh.text = GetBriefStatusDisplay(map);
+            
             if (HUDManager.Instance == null || !StartOfRound.Instance.inShipPhase)
             {
                 if (HUDPatches.ReadyStatusTextMesh != null)
@@ -96,7 +99,7 @@ namespace ReadyCompany
             UpdateShipLever(map);
         }
 
-        private static string GetBriefStatusDisplay(ReadyMap map) =>
+        internal static string GetBriefStatusDisplay(ReadyMap map) =>
             $"{map.PlayersReady} / {map.LobbySize} Players are ready.\n" +
             (map.LocalPlayerReady ? $"Triple tap your Ready bind to Unready!" : $"Hold your Ready bind to Ready Up!");
 
@@ -134,9 +137,9 @@ namespace ReadyCompany
 
         public static void UpdateReadyMap()
         {
-            ReadyCompany.Logger.LogDebug($"Ready Map State before verify: {string.Join(", ", _playerReadyMap.Keys)}");
+            ReadyCompany.Logger.LogDebug($"Ready Map State before verify: {string.Join(", ", _playerReadyMap.Keys)} | {string.Join(", ", _playerReadyMap.Values)}");
             VerifyReadyUpMap();
-            ReadyCompany.Logger.LogDebug($"Ready Map State after verify: {string.Join(", ", _playerReadyMap.Keys)}");
+            ReadyCompany.Logger.LogDebug($"Ready Map State after verify: {string.Join(", ", _playerReadyMap.Keys)} | {string.Join(", ", _playerReadyMap.Values)}");
             
             ReadyStatus.Value = new(_playerReadyMap);
             ReadyStatus.MakeDirty();
@@ -144,21 +147,22 @@ namespace ReadyCompany
 
         private static void VerifyReadyUpMap()
         {
-            foreach (var (clientid, _) in _playerReadyMap.Where(kvp => !StartOfRound.Instance.fullyLoadedPlayers.Contains(kvp.Key)).ToList())
+            foreach (var (clientid, _) in _playerReadyMap.Where(kvp => !StartOfRound.Instance.ClientPlayerList.ContainsKey(kvp.Key)).ToList())
             {
                 _playerReadyMap.Remove(clientid);
             }
 
             if (StartOfRound.Instance != null)
             {
-                foreach (var clientId in StartOfRound.Instance.fullyLoadedPlayers)
+                foreach (var clientId in StartOfRound.Instance.ClientPlayerList.Keys)
                 {
                     _playerReadyMap.TryAdd(clientId, false);
                 }
             }
-            else if (NetworkManager.Singleton != null)
+            
+            if (NetworkManager.Singleton != null)
             {
-                _playerReadyMap[NetworkManager.Singleton.LocalClientId] = false;
+                _playerReadyMap.TryAdd(NetworkManager.Singleton.LocalClientId, false);
             }
         }
 

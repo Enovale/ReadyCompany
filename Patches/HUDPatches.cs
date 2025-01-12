@@ -35,6 +35,7 @@ namespace ReadyCompany.Patches
             ReadyStatusTextMesh.overflowMode = 0;
             ReadyStatusTextMesh.enabled = true;
             ReadyStatusTextMesh.text = "Test Test 123123";
+            ReadyHandler.PopupReadyStatus(ReadyHandler.ReadyStatus.Value);
         }
     }
 }
