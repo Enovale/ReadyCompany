@@ -24,6 +24,8 @@ namespace ReadyCompany
             }
         }
 
+        public bool Empty => ClientIds.Length <= 0 || ReadyStates.Length <= 0;
+
         public ReadyMap()
         {
             
@@ -39,7 +41,25 @@ namespace ReadyCompany
 
         public override bool Equals(object? obj)
         {
-            return obj is IDictionary<ulong, bool> d ? d.Keys.SequenceEqual(ClientIds) && d.Values.SequenceEqual(ReadyStates) : base.Equals(obj);
+            ReadyCompany.Logger.LogDebug($"Equals triggered - this: {string.Join(", ", this.ClientIds)} | {string.Join(", ", ReadyStates)}");
+            if (obj is ReadyMap d)
+            {
+                ReadyCompany.Logger.LogDebug(
+                    $"Equals triggered - obj: {string.Join(", ", d.ClientIds)} | {string.Join(", ", d.ReadyStates)}");
+                return d.ClientIds.SequenceEqual(ClientIds) && d.ReadyStates.SequenceEqual(ReadyStates);
+            }
+
+            return base.Equals(obj);
+        }
+
+        public static bool operator ==(ReadyMap obj1, ReadyMap obj2)
+        {
+            return obj1.Equals(obj2);
+        }
+
+        public static bool operator !=(ReadyMap obj1, ReadyMap obj2)
+        {
+            return !(obj1 == obj2);
         }
     }
 }
