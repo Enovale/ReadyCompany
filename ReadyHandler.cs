@@ -35,9 +35,12 @@ namespace ReadyCompany
             {
                 // Specifically when using a KbmInteraction of some kind, this code needs to be deferred
                 // So that the input system is initialized. I don't like it being here but it works for now...
-                ReadyCompany.InputActions ??= new ReadyInputs();
-                ReadyCompany.InputActions.ReadyInput.performed += ReadyInputPerformed;
-                ReadyCompany.InputActions.UnreadyInput.performed += UnreadyInputPerformed;
+                if (ReadyCompany.InputActions == null)
+                {
+                    ReadyCompany.InputActions = new ReadyInputs();
+                    ReadyCompany.InputActions.ReadyInput.performed += ReadyInputPerformed;
+                    ReadyCompany.InputActions.UnreadyInput.performed += UnreadyInputPerformed;
+                }
             };
             NewReadyStatus += HUDPatches.UpdateTextBasedOnStatus;
         }
@@ -95,7 +98,7 @@ namespace ReadyCompany
 
         internal static string GetBriefStatusDisplay(ReadyMap map) =>
             $"{map.PlayersReady} / {map.LobbySize} Players are ready.\n" +
-            (map.LocalPlayerReady ? $"Triple tap your Ready bind to Unready!" : $"Hold your Ready bind to Ready Up!");
+            (map.LocalPlayerReady ? $"{ReadyCompany.InputActions?.UnreadyInputName} to Unready!" : $"{ReadyCompany.InputActions?.ReadyInputName} to Ready Up!");
 
         private static void UpdateShipLever(ReadyMap map)
         {
