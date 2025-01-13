@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using LethalNetworkAPI;
 using LethalNetworkAPI.Utils;
 using ReadyCompany.Patches;
+using Unity.Netcode;
 using UnityEngine.InputSystem;
 
 namespace ReadyCompany
@@ -39,7 +41,24 @@ namespace ReadyCompany
                 {
                     ReadyCompany.InputActions = new ReadyInputs();
                     ReadyCompany.InputActions.ReadyInput.performed += ReadyInputPerformed;
+                    ReadyCompany.InputActions.ReadyInput.started += context =>
+                    {
+                        InteractionBarUI.Instance.ReadyInteraction = context.interaction;
+                    };
+                    ReadyCompany.InputActions.ReadyInput.canceled += context =>
+                    {
+                        InteractionBarUI.Instance.ReadyInteraction = null;
+                    };
                     ReadyCompany.InputActions.UnreadyInput.performed += UnreadyInputPerformed;
+                    ReadyCompany.InputActions.UnreadyInput.started += context =>
+                    {
+                        InteractionBarUI.Instance.UnreadyInteraction = context.interaction;
+                    };
+                    ReadyCompany.InputActions.UnreadyInput.canceled += context =>
+                    {
+                        InteractionBarUI.Instance.UnreadyInteraction = null;
+                    };
+                    ReadyCompany.Config.UpdateBindingsBasedOnConfig();
                 }
             };
             NewReadyStatus += HUDPatches.UpdateTextBasedOnStatus;
@@ -52,7 +71,7 @@ namespace ReadyCompany
         // (noone ready, reset and verify = noone ready still)
         public static void ResetReadyUp()
         {
-            if (LNetworkUtils.IsHostOrServer)
+            if (NetworkManager.Singleton != null && LNetworkUtils.IsHostOrServer)
             {
                 _playerReadyMap.Clear();
                 UpdateReadyMap();
@@ -162,12 +181,31 @@ namespace ReadyCompany
 
         private static void ReadyInputPerformed(InputAction.CallbackContext context)
         {
+            if (!ReadyStatus.Value.LocalPlayerReady)
+            {
+                ReadyCompany.InputActions?.UnreadyInput.Disable();
+                Task.Run(ReenableInputs);
+            }
+            
             readyUpMessage.SendServer(true);
         }
 
         private static void UnreadyInputPerformed(InputAction.CallbackContext context)
         {
+            if (ReadyStatus.Value.LocalPlayerReady)
+            {
+                ReadyCompany.InputActions?.ReadyInput.Disable();
+                Task.Run(ReenableInputs);
+            }
+            
             readyUpMessage.SendServer(false);
+        }
+
+        private static async Task ReenableInputs()
+        {
+            await Task.Delay(500);
+            ReadyCompany.InputActions?.ReadyInput.Enable();
+            ReadyCompany.InputActions?.UnreadyInput.Enable();
         }
 
         private static int TryGetPlayerIdFromClientId(ulong clientId)

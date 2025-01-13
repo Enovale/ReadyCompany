@@ -54,7 +54,7 @@
         <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0" PrivateAssets="all" />
         <PackageReference Include="LethalCompany.GameLibs.Steam" Version="*-*" Publicize="true" PrivateAssets="all"/>
         <PackageReference Include="Sigurd.BepInEx.CSync" Version="5.0.1" />
-        <PackageReference Include="UnityEngine.Modules" Version="2022.3.9" IncludeAssets="compile" PrivateAssets="all"/>
+        <PackageReference Include="UnityEngine.Modules" Version="2022.3.9" Publicize="true" IncludeAssets="compile" PrivateAssets="all"/>
         <PackageReference Include="TeamBMX.LobbyCompatibility" Version="1.*" PrivateAssets="all"/>
         <PackageReference Include="Xilophor.LethalNetworkAPI" Version="3.3.2" PrivateAssets="all" />
         <PackageReference Include="Rune580.Mods.LethalCompany.InputUtils" Publicize="true" Version="0.7.3" />
