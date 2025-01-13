@@ -22,6 +22,7 @@ eaten by a dog when they come back from eating.
 
 ## Planned (Maybe) Features
 
+- Don't show popup but still make the sound (or a custom sound)
 - Config option to change the binding interactions that is more user friendly
 - Option to run a ready check at the Company
 - Standby option: "i'm AFK but you can start without me"
