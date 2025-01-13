@@ -40,9 +40,13 @@ public class ReadyCompany : BaseUnityPlugin
             Max = 100
         });
         LethalConfigManager.AddConfigItem(percentageForReadySlider);
+        var readyInteractionInput = new TextInputFieldConfigItem(Config.CustomReadyInteractionString, false);
+        LethalConfigManager.AddConfigItem(readyInteractionInput);
+        var unreadyInteractionInput = new TextInputFieldConfigItem(Config.CustomUnreadyInteractionString, false);
+        LethalConfigManager.AddConfigItem(unreadyInteractionInput);
 
         if (BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("BMX.LobbyCompatibility"))
-            PluginHelper.RegisterPlugin(MyPluginInfo.PLUGIN_GUID, new(MyPluginInfo.PLUGIN_VERSION), CompatibilityLevel.ServerOnly, VersionStrictness.Major);
+            PluginHelper.RegisterPlugin(MyPluginInfo.PLUGIN_GUID, new(MyPluginInfo.PLUGIN_VERSION), CompatibilityLevel.Everyone, VersionStrictness.Major);
         
         ReadyHandler.InitializeEvents();
 
