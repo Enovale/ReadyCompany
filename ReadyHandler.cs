@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using LethalNetworkAPI;
 using LethalNetworkAPI.Utils;
 using ReadyCompany.Patches;
 using Unity.Netcode;
+using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace ReadyCompany
@@ -103,6 +103,7 @@ namespace ReadyCompany
         {
             PopupReadyStatus(newValue);
             NewReadyStatus?.Invoke(newValue);
+            UpdateShipLever(newValue);
         }
 
         internal static void PopupReadyStatus(ReadyMap map)
@@ -110,17 +111,49 @@ namespace ReadyCompany
             if (HUDManager.Instance == null || !StartOfRound.Instance.inShipPhase)
                 return;
 
-            HUDManager.Instance.DisplayTip("Ready Up!", GetBriefStatusDisplay(map), prefsKey: MyPluginInfo.PLUGIN_GUID + "_ReadyTip");
+            AudioClip[] sfx;
+            if (IsLobbyReady(map) && ReadyCompany.Config.CustomLobbyReadySounds.Count > 0)
+                sfx = ReadyCompany.Config.CustomLobbyReadySounds.ToArray();
+            else
+                sfx = ReadyCompany.Config.CustomPopupSounds.Count > 0
+                    ? ReadyCompany.Config.CustomPopupSounds.ToArray()
+                    : HUDManager.Instance.tipsSFX;
+
+            CustomDisplayTip("Ready Up!", GetBriefStatusDisplay(map), sfx);
             //HUDManager.Instance.DisplaySpectatorTip($"{map.PlayersReady} / {map.LobbySize} Players are ready.");
-            UpdateShipLever(map);
+        }
+
+        private static void CustomDisplayTip(string headerText, string bodyText, AudioClip[]? sfx = null)
+        {
+            var hud = HUDManager.Instance;
+            if (hud == null)
+                return;
+
+            if (ReadyCompany.Config.ShowPopup.Value)
+            {
+                hud.tipsPanelHeader.text = headerText;
+                hud.tipsPanelBody.text = bodyText;
+                hud.tipsPanelAnimator.SetTrigger("TriggerHint");
+            }
+
+            if (ReadyCompany.Config.PlaySound.Value)
+            {
+                sfx ??= hud.tipsSFX;
+                if (sfx.Length <= 0)
+                    sfx = hud.tipsSFX;
+                RoundManager.PlayRandomClip(hud.UIAudio, sfx, false, ReadyCompany.Config.SoundVolume.Value / 100f);
+            }
         }
 
         internal static string GetBriefStatusDisplay(ReadyMap map) =>
             $"{map.PlayersReady} / {map.LobbySize} Players are ready.\n" +
             (map.LocalPlayerReady ? $"{ReadyCompany.InputActions?.UnreadyInputName} to Unready!" : $"{ReadyCompany.InputActions?.ReadyInputName} to Ready Up!");
 
-        private static void UpdateShipLever(ReadyMap map)
+        internal static void UpdateShipLever(ReadyMap map)
         {
+            if (StartOfRound.Instance == null || !StartOfRound.Instance.inShipPhase || StartOfRound.Instance.travellingToNewLevel)
+                return;
+            
             var lever = UnityEngine.Object.FindObjectOfType<StartMatchLever>();
             var lobbyReady = IsLobbyReady(map);
             if (ReadyCompany.Config.RequireReadyToStart.Value)
@@ -184,7 +217,7 @@ namespace ReadyCompany
             if (!ReadyStatus.Value.LocalPlayerReady)
             {
                 ReadyCompany.InputActions?.UnreadyInput.Disable();
-                Task.Run(ReenableInputs);
+                ReadyCompany.InputActions?.UnreadyInput.Enable();
             }
             
             readyUpMessage.SendServer(true);
@@ -195,17 +228,10 @@ namespace ReadyCompany
             if (ReadyStatus.Value.LocalPlayerReady)
             {
                 ReadyCompany.InputActions?.ReadyInput.Disable();
-                Task.Run(ReenableInputs);
+                ReadyCompany.InputActions?.ReadyInput.Enable();
             }
             
             readyUpMessage.SendServer(false);
-        }
-
-        private static async Task ReenableInputs()
-        {
-            await Task.Delay(500);
-            ReadyCompany.InputActions?.ReadyInput.Enable();
-            ReadyCompany.InputActions?.UnreadyInput.Enable();
         }
 
         private static int TryGetPlayerIdFromClientId(ulong clientId)

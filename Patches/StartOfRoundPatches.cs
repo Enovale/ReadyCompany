@@ -24,5 +24,12 @@ namespace ReadyCompany.Patches
         {
             ReadyHandler.ResetReadyUp();
         }
+        
+        [HarmonyPatch(nameof(StartOfRound.ArriveAtLevel))]
+        [HarmonyPostfix]
+        public static void OnShipArriveAtLevelPatch()
+        {
+            ReadyHandler.UpdateShipLever(ReadyHandler.ReadyStatus.Value);
+        }
     }
 }

@@ -6,7 +6,7 @@ using Mono.Cecil.Cil;
 using MonoMod.Utils;
 using Unity.Netcode;
 
-namespace ReadyCompany
+namespace ReadyCompany.Util
 {
     public static class Utils
     {

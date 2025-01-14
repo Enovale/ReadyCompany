@@ -27,8 +27,8 @@ public class ReadyCompany : BaseUnityPlugin
     private void Awake()
     {
         Logger = base.Logger;
-        Config = new ReadyCompanyConfig(base.Config);
         Instance = this;
+        Config = new ReadyCompanyConfig(base.Config);
         var requireReadyToStartButton = new BoolCheckBoxConfigItem(Config.RequireReadyToStart.Entry, false);
         LethalConfigManager.AddConfigItem(requireReadyToStartButton);
         var autoStartWhenReadyButton = new BoolCheckBoxConfigItem(Config.AutoStartWhenReady.Entry, false);
@@ -40,6 +40,20 @@ public class ReadyCompany : BaseUnityPlugin
             Max = 100
         });
         LethalConfigManager.AddConfigItem(percentageForReadySlider);
+        var showPopupCheckbox = new BoolCheckBoxConfigItem(Config.ShowPopup, false);
+        LethalConfigManager.AddConfigItem(showPopupCheckbox);
+        var playSoundCheckbox = new BoolCheckBoxConfigItem(Config.PlaySound, false);
+        LethalConfigManager.AddConfigItem(playSoundCheckbox);
+        var soundVolumeSlider = new IntSliderConfigItem(Config.SoundVolume, new IntSliderOptions 
+        {
+            RequiresRestart = false,
+            Min = 0,
+            Max = 100
+        });
+        LethalConfigManager.AddConfigItem(soundVolumeSlider);
+        var reloadCustomSoundsButton = new GenericButtonConfigItem(ReadyCompanyConfig.TUNING_STRING,
+            "Reload Custom Sounds", "Reloads any custom sounds from disk.", "Reload", () => Config.LoadCustomSounds());
+        LethalConfigManager.AddConfigItem(reloadCustomSoundsButton);
         var readyInteractionInput = new TextInputFieldConfigItem(Config.CustomReadyInteractionString, false);
         LethalConfigManager.AddConfigItem(readyInteractionInput);
         var unreadyInteractionInput = new TextInputFieldConfigItem(Config.CustomUnreadyInteractionString, false);
