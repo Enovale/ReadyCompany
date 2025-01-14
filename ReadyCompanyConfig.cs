@@ -1,7 +1,9 @@
+using System.Collections.Generic;
+using System.IO;
 using BepInEx.Configuration;
 using CSync.Extensions;
 using CSync.Lib;
-using ReadyCompany.Patches;
+using ReadyCompany.Util;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -12,20 +14,22 @@ namespace ReadyCompany
         [field: SyncedEntryField] public SyncedEntry<bool> RequireReadyToStart { get; private set; }
         [field: SyncedEntryField] public SyncedEntry<bool> AutoStartWhenReady { get; private set; }
         [field: SyncedEntryField] public SyncedEntry<int> PercentageForReady { get; private set; }
-        
-        //public ConfigEntry<InteractionType> ReadyUpInteraction { get; private set; } 
-        //public ConfigEntry<InteractionType> UnreadyInteraction { get; private set; } 
-        //public ConfigEntry<float> HoldTimeNeeded { get; private set; } 
-        //public ConfigEntry<int> MultiTapsNeeded { get; private set; }
-        
+
+        public ConfigEntry<bool> ShowPopup { get; private set; }
+        public ConfigEntry<bool> PlaySound { get; private set; }
+        public ConfigEntry<int> SoundVolume { get; private set; }
+
         public ConfigEntry<Color> ReadyBarColor { get; private set; }
         public ConfigEntry<string> CustomReadyInteractionString { get; private set; }
         public ConfigEntry<Color> UnreadyBarColor { get; private set; }
         public ConfigEntry<string> CustomUnreadyInteractionString { get; private set; }
+        
+        internal List<AudioClip> CustomPopupSounds { get; private set; } = [];
+        internal List<AudioClip> CustomLobbyReadySounds { get; private set; } = [];
 
-        private const string FEATURES_STRING = "Features";
-        private const string TUNING_STRING = "Tuning";
-        private const string INTERACTION_STRING = "Interaction";
+        internal const string FEATURES_STRING = "Features";
+        internal const string TUNING_STRING = "Tuning";
+        internal const string INTERACTION_STRING = "Interaction";
 
         public ReadyCompanyConfig(ConfigFile cfg) : base(MyPluginInfo.PLUGIN_GUID)
         {
@@ -35,6 +39,10 @@ namespace ReadyCompany
             RequireReadyToStart.Changed += (_, _) => ReadyHandler.UpdateReadyMap();
             AutoStartWhenReady.Changed += (_, _) => ReadyHandler.UpdateReadyMap();
             RequireReadyToStart.Changed += (_, _) => ReadyHandler.UpdateReadyMap();
+            
+            ShowPopup = cfg.Bind(TUNING_STRING, nameof(ShowPopup), true, "Whether or not to show popup when the ready status changes.");
+            PlaySound = cfg.Bind(TUNING_STRING, nameof(PlaySound), true, "Whether or not to play a sound when the ready status changes.");
+            SoundVolume = cfg.Bind(TUNING_STRING, nameof(SoundVolume), 100, "The volume of the popup sound.");
 
             ReadyBarColor = cfg.Bind(INTERACTION_STRING, nameof(ReadyBarColor), Color.white, "What color the bar should be when holding the bind.");
             UnreadyBarColor = cfg.Bind(INTERACTION_STRING, nameof(UnreadyBarColor), Color.red, "What color the bar should be when holding the bind.");
@@ -43,7 +51,30 @@ namespace ReadyCompany
             CustomReadyInteractionString.SettingChanged += (_, _) => UpdateBindingsBasedOnConfig();
             CustomUnreadyInteractionString.SettingChanged += (_, _) => UpdateBindingsBasedOnConfig();
 
+            LoadCustomSounds();
+
             ConfigManager.Register(this);
+        }
+
+        internal void LoadCustomSounds()
+        {
+            CustomPopupSounds.Clear();
+            CustomLobbyReadySounds.Clear();
+            var pluginPath = Path.GetDirectoryName(ReadyCompany.Instance.Info.Location)!;
+            foreach (var soundFile in Directory.EnumerateFiles(pluginPath, "*.*", SearchOption.AllDirectories))
+            {
+                if (!soundFile.EndsWith(".wav") && !soundFile.EndsWith(".ogg") && !soundFile.EndsWith(".mp3"))
+                    continue;
+
+                if (Path.GetFileNameWithoutExtension(soundFile).StartsWith("LobbyReady"))
+                {
+                    CustomLobbyReadySounds.Add(AudioUtility.GetAudioClip(soundFile));
+                    continue;
+                }
+                
+                ReadyCompany.Logger.LogDebug($"Loading audioclip {soundFile}");
+                CustomPopupSounds.Add(AudioUtility.GetAudioClip(soundFile));
+            }
         }
 
         internal void UpdateBindingsBasedOnConfig()
