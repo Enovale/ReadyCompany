@@ -5,6 +5,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Utils;
 using Unity.Netcode;
+using UnityEngine;
 
 namespace ReadyCompany.Util
 {
@@ -35,6 +36,12 @@ namespace ReadyCompany.Util
 
             ReadyCompany.Logger.LogFatal($"Cannot find Rpc ID for {methodInfo.Name}");
             return false;
+        }
+
+        internal static void PlayRandomClip(AudioSource audioSource, AudioClip[] clipsArray, float oneShotVolume = 1f)
+        {
+            var index = Random.Range(0, Mathf.Min(1000, clipsArray.Length));
+            audioSource.PlayOneShot(clipsArray[index], oneShotVolume);
         }
     }
 }

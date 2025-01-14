@@ -4,6 +4,7 @@ using System.Linq;
 using LethalNetworkAPI;
 using LethalNetworkAPI.Utils;
 using ReadyCompany.Patches;
+using ReadyCompany.Util;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -141,7 +142,7 @@ namespace ReadyCompany
                 sfx ??= hud.tipsSFX;
                 if (sfx.Length <= 0)
                     sfx = hud.tipsSFX;
-                RoundManager.PlayRandomClip(hud.UIAudio, sfx, false, ReadyCompany.Config.SoundVolume.Value / 100f);
+                Utils.PlayRandomClip(hud.UIAudio, sfx, ReadyCompany.Config.SoundVolume.Value / 100f);
             }
         }
 
