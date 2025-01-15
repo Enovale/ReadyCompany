@@ -8,6 +8,7 @@ using ReadyCompany.Util;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 namespace ReadyCompany
 {
@@ -25,6 +26,8 @@ namespace ReadyCompany
         private static readonly LNetworkMessage<bool> readyUpMessage = LNetworkMessage<bool>.Connect(identifier: READY_EVENT_SIG, ReadyUpFromClient);
 
         private static readonly Dictionary<int, bool> _playerReadyMap = new();
+
+        internal static bool ShouldPlaySound { get; set; }
         
         public static event Action<ReadyMap>? NewReadyStatus;
 
@@ -34,35 +37,31 @@ namespace ReadyCompany
         internal static void InitializeEvents()
         {
             ReadyStatus.Value = new(_playerReadyMap);
-            LNetworkUtils.OnNetworkStart += b =>
-            {
-                // Specifically when using a KbmInteraction of some kind, this code needs to be deferred
-                // So that the input system is initialized. I don't like it being here but it works for now...
-                if (ReadyCompany.InputActions == null)
-                {
-                    ReadyCompany.InputActions = new ReadyInputs();
-                    ReadyCompany.InputActions.ReadyInput.performed += ReadyInputPerformed;
-                    ReadyCompany.InputActions.ReadyInput.started += context =>
-                    {
-                        InteractionBarUI.Instance.ReadyInteraction = context.interaction;
-                    };
-                    ReadyCompany.InputActions.ReadyInput.canceled += context =>
-                    {
-                        InteractionBarUI.Instance.ReadyInteraction = null;
-                    };
-                    ReadyCompany.InputActions.UnreadyInput.performed += UnreadyInputPerformed;
-                    ReadyCompany.InputActions.UnreadyInput.started += context =>
-                    {
-                        InteractionBarUI.Instance.UnreadyInteraction = context.interaction;
-                    };
-                    ReadyCompany.InputActions.UnreadyInput.canceled += context =>
-                    {
-                        InteractionBarUI.Instance.UnreadyInteraction = null;
-                    };
-                    ReadyCompany.Config.UpdateBindingsBasedOnConfig();
-                }
-            };
+            // There's a weird bug where sometimes the input system isn't initialized at Awake()
+            // So we defer it to the first scene load instead
+            SceneManager.sceneLoaded += OnSceneLoaded;
             NewReadyStatus += HUDPatches.UpdateTextBasedOnStatus;
+        }
+
+        private static void OnSceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
+        {
+            InitializeInputActions();
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+        }
+
+        private static void InitializeInputActions()
+        {
+            if (ReadyCompany.InputActions == null)
+            {
+                ReadyCompany.InputActions = new ReadyInputs();
+                ReadyCompany.InputActions.ReadyInput.performed += ReadyInputPerformed;
+                ReadyCompany.InputActions.ReadyInput.started += context => { InteractionBarUI.Instance.ReadyInteraction = context.interaction; };
+                ReadyCompany.InputActions.ReadyInput.canceled += context => { InteractionBarUI.Instance.ReadyInteraction = null; };
+                ReadyCompany.InputActions.UnreadyInput.performed += UnreadyInputPerformed;
+                ReadyCompany.InputActions.UnreadyInput.started += context => { InteractionBarUI.Instance.UnreadyInteraction = context.interaction; };
+                ReadyCompany.InputActions.UnreadyInput.canceled += context => { InteractionBarUI.Instance.UnreadyInteraction = null; };
+                ReadyCompany.Config.UpdateBindingsBasedOnConfig();
+            }
         }
 
         public static bool IsLobbyReady(ReadyMap map) => map.LobbySize > 0 && map.PlayersReady / map.LobbySize >=
@@ -137,13 +136,15 @@ namespace ReadyCompany
                 hud.tipsPanelAnimator.SetTrigger("TriggerHint");
             }
 
-            if (ReadyCompany.Config.PlaySound.Value)
+            if (ReadyCompany.Config.PlaySound.Value && ShouldPlaySound)
             {
                 sfx ??= hud.tipsSFX;
                 if (sfx.Length <= 0)
                     sfx = hud.tipsSFX;
                 Utils.PlayRandomClip(hud.UIAudio, sfx, ReadyCompany.Config.SoundVolume.Value / 100f);
             }
+
+            ShouldPlaySound = true;
         }
 
         internal static string GetBriefStatusDisplay(ReadyMap map) =>
@@ -187,6 +188,9 @@ namespace ReadyCompany
 
         public static void UpdateReadyMap()
         {
+            if (!LNetworkUtils.IsConnected)
+                return;
+            
             VerifyReadyUpMap();
             
             ReadyStatus.Value = new(_playerReadyMap);
@@ -195,6 +199,9 @@ namespace ReadyCompany
 
         private static void VerifyReadyUpMap()
         {
+            if (!LNetworkUtils.IsConnected)
+                return;
+            
             foreach (var (clientId, _) in _playerReadyMap.Where(kvp => kvp.Key != LocalPlayerId && !StartOfRound.Instance.ClientPlayerList.ContainsValue(kvp.Key)).ToList())
             {
                 _playerReadyMap.Remove(clientId);
@@ -215,7 +222,10 @@ namespace ReadyCompany
 
         private static void ReadyInputPerformed(InputAction.CallbackContext context)
         {
-            if (!ReadyStatus.Value.LocalPlayerReady)
+            if (!LNetworkUtils.IsConnected)
+                return;
+            
+            if (ReadyStatus is { Value.LocalPlayerReady: false })
             {
                 ReadyCompany.InputActions?.UnreadyInput.Disable();
                 ReadyCompany.InputActions?.UnreadyInput.Enable();
@@ -226,7 +236,10 @@ namespace ReadyCompany
 
         private static void UnreadyInputPerformed(InputAction.CallbackContext context)
         {
-            if (ReadyStatus.Value.LocalPlayerReady)
+            if (!LNetworkUtils.IsConnected)
+                return;
+            
+            if (ReadyStatus is { Value.LocalPlayerReady: true })
             {
                 ReadyCompany.InputActions?.ReadyInput.Disable();
                 ReadyCompany.InputActions?.ReadyInput.Enable();

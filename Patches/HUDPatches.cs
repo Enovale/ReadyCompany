@@ -15,6 +15,9 @@ namespace ReadyCompany.Patches
         private static void Start(ref HUDManager __instance)
         {
             var parent = __instance.HUDElements[2].canvasGroup.transform.parent;
+            if (parent == null)
+                return;
+            
             var statusParent = new GameObject("ReadyStatusDisplay", typeof(TextMeshProUGUI), typeof(CanvasGroup));
             statusParent.transform.SetParent(parent);
             __instance.HUDElements = __instance.HUDElements.AddToArray<HUDElement>(new HUDElement

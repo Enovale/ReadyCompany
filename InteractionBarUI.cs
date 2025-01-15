@@ -29,7 +29,7 @@ namespace ReadyCompany
                 return;
 
             var percentage = 0f;
-            if (ReadyInteraction != null && !ReadyHandler.ReadyStatus.Value.LocalPlayerReady)
+            if (ReadyInteraction != null && ReadyHandler.ReadyStatus is {Value.LocalPlayerReady: false})
             {
                 image.color = ReadyCompany.Config.ReadyBarColor.Value;
                 if (ReadyInteraction is MultiTapInteraction m)
@@ -41,7 +41,7 @@ namespace ReadyCompany
                     percentage = (float)(Time.realtimeSinceStartupAsDouble - h.m_TimePressed) / h.durationOrDefault;
                 }
             }
-            else if (UnreadyInteraction != null && ReadyHandler.ReadyStatus.Value.LocalPlayerReady)
+            else if (UnreadyInteraction != null && ReadyHandler.ReadyStatus is {Value.LocalPlayerReady: true})
             {
                 image.color = ReadyCompany.Config.UnreadyBarColor.Value;
                 if (UnreadyInteraction is MultiTapInteraction m)

@@ -26,7 +26,6 @@ eaten by a dog when they come back from eating.
 - Option to run a ready check at the Company
 - Standby option: "i'm AFK but you can start without me"
 - Auto ready under certain user-specified conditions
-- Different sound when lobby is considered ready
 
 # Credits
 

@@ -11,8 +11,11 @@ namespace ReadyCompany.Patches
         [HarmonyPostfix]
         public static void PlayerLoadedPatch()
         {
-            if (LNetworkUtils.IsHostOrServer)
+            if (LNetworkUtils.IsConnected && LNetworkUtils.IsHostOrServer)
+            {
+                ReadyHandler.ShouldPlaySound = false;
                 ReadyHandler.UpdateReadyMap();
+            }
         }
     }
 }

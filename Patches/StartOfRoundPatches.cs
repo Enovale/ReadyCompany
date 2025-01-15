@@ -12,7 +12,7 @@ namespace ReadyCompany.Patches
         [HarmonyPostfix]
         public static void OnClientDisconnectedPatch()
         {
-            if (LNetworkUtils.IsHostOrServer)
+            if (LNetworkUtils.IsConnected && LNetworkUtils.IsHostOrServer)
                 ReadyHandler.OnClientDisconnected();
         }
 
@@ -22,14 +22,16 @@ namespace ReadyCompany.Patches
         [HarmonyPostfix]
         public static void OnShipReadyToLandPatch()
         {
-            ReadyHandler.ResetReadyUp();
+            if (LNetworkUtils.IsConnected)
+                ReadyHandler.ResetReadyUp();
         }
         
         [HarmonyPatch(nameof(StartOfRound.ArriveAtLevel))]
         [HarmonyPostfix]
         public static void OnShipArriveAtLevelPatch()
         {
-            ReadyHandler.UpdateShipLever(ReadyHandler.ReadyStatus.Value);
+            if (LNetworkUtils.IsConnected && LNetworkUtils.IsHostOrServer)
+                ReadyHandler.UpdateShipLever(ReadyHandler.ReadyStatus.Value);
         }
     }
 }
