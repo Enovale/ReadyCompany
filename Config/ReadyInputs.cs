@@ -1,7 +1,7 @@
 using LethalCompanyInputUtils.Api;
 using UnityEngine.InputSystem;
 
-namespace ReadyCompany
+namespace ReadyCompany.Config
 {
     public class ReadyInputs : LcInputActions
     {

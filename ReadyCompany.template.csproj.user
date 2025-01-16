@@ -8,7 +8,8 @@
     <Target Name="CopyFiles" AfterTargets="PostBuildEvent">
         <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PluginDirectory)"/>
         <Copy SourceFiles="$(MSBuildProjectDirectory)/README.md" DestinationFolder="$(PluginDirectory)"/>
-        <Copy SourceFiles="$(MSBuildProjectDirectory)/manifest.json" DestinationFolder="$(PluginDirectory)"/>
-        <Copy SourceFiles="$(MSBuildProjectDirectory)/icon.png" DestinationFolder="$(PluginDirectory)"/>
+        <Copy SourceFiles="$(MSBuildProjectDirectory)/LICENSE" DestinationFolder="$(PluginDirectory)"/>
+        <Copy SourceFiles="$(MSBuildProjectDirectory)/Package/manifest.json" DestinationFolder="$(PluginDirectory)"/>
+        <Copy SourceFiles="$(MSBuildProjectDirectory)/Package/icon.png" DestinationFolder="$(PluginDirectory)"/>
     </Target>
 </Project>
