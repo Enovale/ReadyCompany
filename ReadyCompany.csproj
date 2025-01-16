@@ -3,8 +3,7 @@
     <PropertyGroup>
         <AssemblyName>Enova.ReadyCompany</AssemblyName>
         <Product>ReadyCompany</Product>
-        <!-- Change to whatever version you're currently on. -->
-        <Version>0.2.6</Version>
+        <Version>0.2.7</Version>
     </PropertyGroup>
 
     <!-- Project Properties -->

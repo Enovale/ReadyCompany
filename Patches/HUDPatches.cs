@@ -1,4 +1,5 @@
 using HarmonyLib;
+using ReadyCompany.Config;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,6 +10,8 @@ namespace ReadyCompany.Patches
     internal class HUDPatches
     {
         internal static TextMeshProUGUI? ReadyStatusTextMesh;
+
+        private static RectTransform? _parentTransform;
 
         [HarmonyPatch(nameof(HUDManager.Awake))]
         [HarmonyPostfix]
@@ -25,11 +28,12 @@ namespace ReadyCompany.Patches
                 canvasGroup = statusParent.GetComponent<CanvasGroup>(),
                 targetAlpha = 1f
             });
-            var parentTransform = statusParent.GetComponent<RectTransform>();
-            parentTransform.anchorMax = parentTransform.anchorMin = parentTransform.pivot = new(1, 0);
-            parentTransform.sizeDelta = new Vector2(208f, 20f);
-            parentTransform.localScale = Vector3.one;
-            parentTransform.anchoredPosition3D = new Vector3(-75f, 55f, -0.075f);
+            _parentTransform = statusParent.GetComponent<RectTransform>();
+            _parentTransform.anchorMax = _parentTransform.anchorMin = _parentTransform.pivot = new(0.5f, 0);
+            _parentTransform.sizeDelta = new Vector2(208f, 38f);
+            _parentTransform.localScale = Vector3.one;
+            //_parentTransform.anchoredPosition3D = new Vector3(-75f, 55f, -0.075f);
+            _parentTransform.anchoredPosition3D = new Vector3(0f, 115f, -0.075f);
             
             ReadyStatusTextMesh = statusParent.GetComponent<TextMeshProUGUI>();
             ReadyStatusTextMesh.font = __instance.controlTipLines[0].font;
@@ -37,7 +41,8 @@ namespace ReadyCompany.Patches
             ReadyStatusTextMesh.enableWordWrapping = false;
             //ReadyStatusTextMesh.color = new Color(0, 135, 32);
             ReadyStatusTextMesh.color = HUDManager.Instance.weightCounter.color;
-            ReadyStatusTextMesh.alignment = TextAlignmentOptions.BottomRight;
+            //ReadyStatusTextMesh.alignment = TextAlignmentOptions.BottomRight;
+            ReadyStatusTextMesh.alignment = TextAlignmentOptions.Top;
             ReadyStatusTextMesh.overflowMode = 0;
             ReadyStatusTextMesh.enabled = true;
             ReadyStatusTextMesh.text = "Test Test 123123";
@@ -46,14 +51,16 @@ namespace ReadyCompany.Patches
             var interactionBarTransform = interactionBar.GetComponent<RectTransform>();
             interactionBarTransform.anchorMax = interactionBarTransform.pivot = new(1, 0);
             interactionBarTransform.anchorMin = Vector2.zero;
-            interactionBarTransform.anchoredPosition3D = new(0, -5, -0.075f);
+            interactionBarTransform.anchoredPosition3D = new(-2f, 0, 0);
             interactionBarTransform.sizeDelta = new Vector2(0f, 5f);
             var interactionBarImage = interactionBar.GetComponent<Image>();
             interactionBarImage.fillMethod = Image.FillMethod.Horizontal;
             interactionBarImage.type = Image.Type.Filled;
             interactionBarImage.sprite = CreateSpriteFromTexture(Texture2D.whiteTexture);
             interactionBarImage.color = Color.white;
-            interactionBar.transform.SetParent(parentTransform.transform, false);
+            interactionBar.transform.SetParent(_parentTransform.transform, false);
+            
+            UpdatePlacementBasedOnConfig(ReadyCompany.Config.StatusPlacement.Value);
         }
 
         private static Sprite CreateSpriteFromTexture(Texture2D texture2D)
@@ -69,6 +76,52 @@ namespace ReadyCompany.Patches
             {
                 ReadyStatusTextMesh.text = ReadyHandler.GetBriefStatusDisplay(status);
                 ReadyStatusTextMesh.gameObject.SetActive(StartOfRound.Instance.inShipPhase);
+            }
+        }
+
+        public static void UpdatePlacementBasedOnConfig(StatusPlacement placement)
+        {
+            if (ReadyStatusTextMesh == null || _parentTransform == null)
+                return;
+            
+            switch (placement)
+            {
+                default:
+                case StatusPlacement.AboveHotbar:
+                    _parentTransform.anchorMax = _parentTransform.anchorMin = _parentTransform.pivot = new(0.5f, 0);
+                    _parentTransform.anchoredPosition3D = new Vector3(0f, 110f, -0.075f);
+                    ReadyStatusTextMesh.alignment = TextAlignmentOptions.Top;
+                    break;
+                case StatusPlacement.BelowHotbar:
+                    _parentTransform.anchorMax = _parentTransform.anchorMin = _parentTransform.pivot = new(0.5f, 0);
+                    _parentTransform.anchoredPosition3D = new Vector3(0f, 0f, -0.075f);
+                    ReadyStatusTextMesh.alignment = TextAlignmentOptions.Top;
+                    break;
+                case StatusPlacement.RightHotbar:
+                    _parentTransform.anchorMax = _parentTransform.anchorMin = _parentTransform.pivot = new(1f, 0);
+                    _parentTransform.anchoredPosition3D = new Vector3(-75f, 55f, -0.075f);
+                    ReadyStatusTextMesh.alignment = TextAlignmentOptions.TopLeft;
+                    break;
+                case StatusPlacement.LeftHotbar:
+                    _parentTransform.anchorMax = _parentTransform.anchorMin = _parentTransform.pivot = new(0f, 0);
+                    _parentTransform.anchoredPosition3D = new Vector3(75f, 55f, -0.075f);
+                    ReadyStatusTextMesh.alignment = TextAlignmentOptions.TopRight;
+                    break;
+                case StatusPlacement.TopScreen:
+                    _parentTransform.anchorMax = _parentTransform.anchorMin = _parentTransform.pivot = new(0.5f, 1f);
+                    _parentTransform.anchoredPosition3D = new Vector3(0f, 0f, -0.075f);
+                    ReadyStatusTextMesh.alignment = TextAlignmentOptions.Top;
+                    break;
+                case StatusPlacement.BottomRightScreen:
+                    _parentTransform.anchorMax = _parentTransform.anchorMin = _parentTransform.pivot = new(1f, 0f);
+                    _parentTransform.anchoredPosition3D = new Vector3(0f, 0f, -0.075f);
+                    ReadyStatusTextMesh.alignment = TextAlignmentOptions.TopRight;
+                    break;
+                case StatusPlacement.BottomLeftScreen:
+                    _parentTransform.anchorMax = _parentTransform.anchorMin = _parentTransform.pivot = new(0f, 0f);
+                    _parentTransform.anchoredPosition3D = new Vector3(0f, 0f, -0.075f);
+                    ReadyStatusTextMesh.alignment = TextAlignmentOptions.TopLeft;
+                    break;
             }
         }
     }
