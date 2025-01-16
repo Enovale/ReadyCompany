@@ -1,6 +1,6 @@
 # Ready Company
 
-<div style="text-align: center;"><img height="64" src="https://github.com/Enovale/ReadyCompany/blob/master/Package/icon.png?raw=true"  alt="ReadyCompany mod icon"/></div>
+<p align="center"><img height="64" src="https://github.com/Enovale/ReadyCompany/blob/master/Package/icon.png?raw=true" alt="ReadyCompany mod icon"/></p>
 
 A mod that adds a Ready Check system, inspired by FFXIV. It is highly customizable, and built with real users in mind.
 
