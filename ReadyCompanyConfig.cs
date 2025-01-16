@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using BepInEx;
 using BepInEx.Configuration;
 using CSync.Extensions;
 using CSync.Lib;
@@ -60,20 +62,22 @@ namespace ReadyCompany
         {
             CustomPopupSounds.Clear();
             CustomLobbyReadySounds.Clear();
-            var pluginPath = Path.GetDirectoryName(ReadyCompany.Instance.Info.Location)!;
-            foreach (var soundFile in Directory.EnumerateFiles(pluginPath, "*.*", SearchOption.AllDirectories))
+            var soundPath = Directory.CreateDirectory(Path.Combine(Paths.ConfigPath, MyPluginInfo.PLUGIN_GUID, "CustomSounds"));
+            var lobbyReadyPath = soundPath.CreateSubdirectory("LobbyReady");
+
+            foreach (var soundFile in soundPath.EnumerateFiles("*.*", SearchOption.AllDirectories))
             {
-                if (!soundFile.EndsWith(".wav") && !soundFile.EndsWith(".ogg") && !soundFile.EndsWith(".mp3"))
+                if (!new[] {".wav", ".mp3", ".ogg"}.Contains(soundFile.Extension))
                     continue;
 
-                if (Path.GetFileNameWithoutExtension(soundFile).StartsWith("LobbyReady"))
+                if (soundFile.IsInside(lobbyReadyPath))
                 {
-                    CustomLobbyReadySounds.Add(AudioUtility.GetAudioClip(soundFile));
+                    CustomLobbyReadySounds.Add(AudioUtility.GetAudioClip(soundFile.FullName));
                     continue;
                 }
                 
                 ReadyCompany.Logger.LogDebug($"Loading audioclip {soundFile}");
-                CustomPopupSounds.Add(AudioUtility.GetAudioClip(soundFile));
+                CustomPopupSounds.Add(AudioUtility.GetAudioClip(soundFile.FullName));
             }
         }
 
