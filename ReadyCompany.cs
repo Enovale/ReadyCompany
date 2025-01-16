@@ -40,6 +40,8 @@ public class ReadyCompany : BaseUnityPlugin
             Max = 100
         });
         LethalConfigManager.AddConfigItem(percentageForReadySlider);
+        var statusPlacementDropdown = new EnumDropDownConfigItem<StatusPlacement>(Config.StatusPlacement, false);
+        LethalConfigManager.AddConfigItem(statusPlacementDropdown);
         var showPopupCheckbox = new BoolCheckBoxConfigItem(Config.ShowPopup, false);
         LethalConfigManager.AddConfigItem(showPopupCheckbox);
         var playSoundCheckbox = new BoolCheckBoxConfigItem(Config.PlaySound, false);
@@ -51,7 +53,7 @@ public class ReadyCompany : BaseUnityPlugin
             Max = 100
         });
         LethalConfigManager.AddConfigItem(soundVolumeSlider);
-        var reloadCustomSoundsButton = new GenericButtonConfigItem(ReadyCompanyConfig.TUNING_STRING,
+        var reloadCustomSoundsButton = new GenericButtonConfigItem(ReadyCompanyConfig.CUSTOMIZATION_STRING,
             "Reload Custom Sounds", "Reloads any custom sounds from disk.", "Reload", () => Config.LoadCustomSounds());
         LethalConfigManager.AddConfigItem(reloadCustomSoundsButton);
         var readyInteractionPreset = new EnumDropDownConfigItem<InteractionPreset>(Config.ReadyInteractionPreset, false);

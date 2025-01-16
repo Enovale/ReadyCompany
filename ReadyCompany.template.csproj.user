@@ -10,6 +10,7 @@
         <Copy SourceFiles="$(MSBuildProjectDirectory)/README.md" DestinationFolder="$(PluginDirectory)"/>
         <Copy SourceFiles="$(MSBuildProjectDirectory)/LICENSE" DestinationFolder="$(PluginDirectory)"/>
         <Copy SourceFiles="$(MSBuildProjectDirectory)/Package/manifest.json" DestinationFolder="$(PluginDirectory)"/>
+        <Copy SourceFiles="$(MSBuildProjectDirectory)/Package/CHANGELOG.md" DestinationFolder="$(PluginDirectory)"/>
         <Copy SourceFiles="$(MSBuildProjectDirectory)/Package/icon.png" DestinationFolder="$(PluginDirectory)"/>
     </Target>
 </Project>
