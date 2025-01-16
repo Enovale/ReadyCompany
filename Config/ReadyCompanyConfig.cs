@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,7 +10,7 @@ using ReadyCompany.Util;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace ReadyCompany
+namespace ReadyCompany.Config
 {
     public class ReadyCompanyConfig: SyncedConfig2<ReadyCompanyConfig>
     {
@@ -22,8 +23,10 @@ namespace ReadyCompany
         public ConfigEntry<int> SoundVolume { get; private set; }
 
         public ConfigEntry<Color> ReadyBarColor { get; private set; }
+        public ConfigEntry<InteractionPreset> ReadyInteractionPreset { get; private set; }
         public ConfigEntry<string> CustomReadyInteractionString { get; private set; }
         public ConfigEntry<Color> UnreadyBarColor { get; private set; }
+        public ConfigEntry<InteractionPreset> UnreadyInteractionPreset { get; private set; }
         public ConfigEntry<string> CustomUnreadyInteractionString { get; private set; }
         
         internal List<AudioClip> CustomPopupSounds { get; private set; } = [];
@@ -48,14 +51,32 @@ namespace ReadyCompany
 
             ReadyBarColor = cfg.Bind(INTERACTION_STRING, nameof(ReadyBarColor), Color.white, "What color the bar should be when holding the bind.");
             UnreadyBarColor = cfg.Bind(INTERACTION_STRING, nameof(UnreadyBarColor), Color.red, "What color the bar should be when holding the bind.");
+            ReadyInteractionPreset = cfg.Bind(INTERACTION_STRING, nameof(ReadyInteractionPreset), InteractionPreset.LongHold, "How you want to press the ready bind to ready up.");
+            UnreadyInteractionPreset = cfg.Bind(INTERACTION_STRING, nameof(UnreadyInteractionPreset), InteractionPreset.TripleTap, "How you want to press the unready bind to unready.");
             CustomReadyInteractionString = cfg.Bind(INTERACTION_STRING, nameof(CustomReadyInteractionString), "hold(duration = 1.5)", "Specify a custom interaction type for this input.");
             CustomUnreadyInteractionString = cfg.Bind(INTERACTION_STRING, nameof(CustomUnreadyInteractionString), "multiTap(tapTime = 0.2, tapCount = 3)", "Specify a custom interaction type for this input.");
+            ReadyInteractionPreset.SettingChanged += (_, _) => SetInteractionStringBasedOnPreset(CustomReadyInteractionString, ReadyInteractionPreset.Value);
+            UnreadyInteractionPreset.SettingChanged += (_, _) => SetInteractionStringBasedOnPreset(CustomUnreadyInteractionString, UnreadyInteractionPreset.Value);
             CustomReadyInteractionString.SettingChanged += (_, _) => UpdateBindingsBasedOnConfig();
             CustomUnreadyInteractionString.SettingChanged += (_, _) => UpdateBindingsBasedOnConfig();
 
             LoadCustomSounds();
 
             ConfigManager.Register(this);
+        }
+
+        private void SetInteractionStringBasedOnPreset(ConfigEntry<string> config, InteractionPreset value)
+        {
+            config.Value = value switch
+            {
+                InteractionPreset.Hold => "hold(duration = 0.75)",
+                InteractionPreset.LongHold => "hold(duration = 1.5)",
+                InteractionPreset.Press => "press",
+                InteractionPreset.DoubleTap => "multiTap(tapTime = 0.2, tapCount = 2)",
+                InteractionPreset.TripleTap => "multiTap(tapTime = 0.2, tapCount = 3)",
+                InteractionPreset.Custom => config.Value,
+                _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
+            };
         }
 
         internal void LoadCustomSounds()

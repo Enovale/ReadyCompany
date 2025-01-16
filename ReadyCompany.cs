@@ -5,6 +5,7 @@ using HarmonyLib;
 using LethalConfig;
 using LethalConfig.ConfigItems;
 using LethalConfig.ConfigItems.Options;
+using ReadyCompany.Config;
 using ReadyCompany.Patches;
 
 namespace ReadyCompany;
@@ -53,9 +54,21 @@ public class ReadyCompany : BaseUnityPlugin
         var reloadCustomSoundsButton = new GenericButtonConfigItem(ReadyCompanyConfig.TUNING_STRING,
             "Reload Custom Sounds", "Reloads any custom sounds from disk.", "Reload", () => Config.LoadCustomSounds());
         LethalConfigManager.AddConfigItem(reloadCustomSoundsButton);
-        var readyInteractionInput = new TextInputFieldConfigItem(Config.CustomReadyInteractionString, false);
+        var readyInteractionPreset = new EnumDropDownConfigItem<InteractionPreset>(Config.ReadyInteractionPreset, false);
+        LethalConfigManager.AddConfigItem(readyInteractionPreset);
+        var unreadyInteractionPreset = new EnumDropDownConfigItem<InteractionPreset>(Config.UnreadyInteractionPreset, false);
+        LethalConfigManager.AddConfigItem(unreadyInteractionPreset);
+        var readyInteractionInput = new TextInputFieldConfigItem(Config.CustomReadyInteractionString, new TextInputFieldOptions()
+        {
+            RequiresRestart = false,
+            CanModifyCallback = () => Config.ReadyInteractionPreset.Value == InteractionPreset.Custom
+        });
         LethalConfigManager.AddConfigItem(readyInteractionInput);
-        var unreadyInteractionInput = new TextInputFieldConfigItem(Config.CustomUnreadyInteractionString, false);
+        var unreadyInteractionInput = new TextInputFieldConfigItem(Config.CustomUnreadyInteractionString, new TextInputFieldOptions()
+        {
+            RequiresRestart = false,
+            CanModifyCallback = () => Config.UnreadyInteractionPreset.Value == InteractionPreset.Custom
+        });
         LethalConfigManager.AddConfigItem(unreadyInteractionInput);
 
         if (BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("BMX.LobbyCompatibility"))
