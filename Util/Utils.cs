@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Reflection;
 using HarmonyLib;
 using HarmonyLib.Public.Patching;
@@ -6,6 +8,7 @@ using Mono.Cecil.Cil;
 using MonoMod.Utils;
 using Unity.Netcode;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace ReadyCompany.Util
 {
@@ -42,6 +45,28 @@ namespace ReadyCompany.Util
         {
             var index = Random.Range(0, Mathf.Min(1000, clipsArray.Length));
             audioSource.PlayOneShot(clipsArray[index], oneShotVolume);
+        }
+        
+        internal static bool IsInside(this DirectoryInfo path, DirectoryInfo folder)
+        {
+            if (path.Parent == null)
+                return false;
+
+            if (string.Equals(path.Parent.FullName, folder.FullName, StringComparison.InvariantCultureIgnoreCase))
+                return true;
+
+            return IsInside(path.Parent, folder);
+        }
+        
+        internal static bool IsInside(this FileInfo path, DirectoryInfo folder)
+        {
+            if (path.Directory == null)
+                return false;
+
+            if (string.Equals(path.Directory.FullName, folder.FullName, StringComparison.InvariantCultureIgnoreCase))
+                return true;
+
+            return IsInside(path.Directory, folder);
         }
     }
 }

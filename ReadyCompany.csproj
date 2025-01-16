@@ -1,11 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
     <!-- BepInEx Properties -->
     <PropertyGroup>
-        <AssemblyName>ReadyCompany</AssemblyName>
+        <AssemblyName>Enova.ReadyCompany</AssemblyName>
         <Product>ReadyCompany</Product>
         <!-- Change to whatever version you're currently on. -->
-        <Version>0.2.5</Version>
+        <Version>0.2.6</Version>
     </PropertyGroup>
 
     <!-- Project Properties -->

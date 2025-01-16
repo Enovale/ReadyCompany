@@ -164,7 +164,7 @@ namespace ReadyCompany
                 lever.triggerScript.hoverTip = lobbyReady ? LEVER_NORMAL_TIP : LEVER_WARNING_TIP;
                 lever.triggerScript.interactable = lobbyReady || LNetworkUtils.IsHostOrServer;
             }
-            else if (lever.triggerScript.disabledHoverTip == LEVER_DISABLED_TIP)
+            else if (lever.triggerScript.disabledHoverTip == LEVER_DISABLED_TIP || lever.triggerScript.hoverTip == LEVER_WARNING_TIP)
             {
                 lever.triggerScript.disabledHoverTip = "";
                 lever.triggerScript.hoverTip = LEVER_NORMAL_TIP;

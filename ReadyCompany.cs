@@ -1,11 +1,10 @@
+using System.Runtime.CompilerServices;
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
 using LethalConfig;
 using LethalConfig.ConfigItems;
 using LethalConfig.ConfigItems.Options;
-using LobbyCompatibility.Enums;
-using LobbyCompatibility.Features;
 using ReadyCompany.Patches;
 
 namespace ReadyCompany;
@@ -60,7 +59,7 @@ public class ReadyCompany : BaseUnityPlugin
         LethalConfigManager.AddConfigItem(unreadyInteractionInput);
 
         if (BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("BMX.LobbyCompatibility"))
-            PluginHelper.RegisterPlugin(MyPluginInfo.PLUGIN_GUID, new(MyPluginInfo.PLUGIN_VERSION), CompatibilityLevel.Everyone, VersionStrictness.Major);
+            InitializeLobbyCompatibility();
         
         ReadyHandler.InitializeEvents();
 
@@ -68,6 +67,9 @@ public class ReadyCompany : BaseUnityPlugin
 
         Logger.LogInfo($"{MyPluginInfo.PLUGIN_GUID} v{MyPluginInfo.PLUGIN_VERSION} has loaded!");
     }
+
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+    private static void InitializeLobbyCompatibility() => LobbyCompatibility.Features.PluginHelper.RegisterPlugin(MyPluginInfo.PLUGIN_GUID, new(MyPluginInfo.PLUGIN_VERSION), LobbyCompatibility.Enums.CompatibilityLevel.Everyone, LobbyCompatibility.Enums.VersionStrictness.Major);
 
     internal static void Patch()
     {
