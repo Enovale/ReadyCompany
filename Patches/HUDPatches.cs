@@ -32,16 +32,13 @@ namespace ReadyCompany.Patches
             _parentTransform.anchorMax = _parentTransform.anchorMin = _parentTransform.pivot = new(0.5f, 0);
             _parentTransform.sizeDelta = new Vector2(208f, 38f);
             _parentTransform.localScale = Vector3.one;
-            //_parentTransform.anchoredPosition3D = new Vector3(-75f, 55f, -0.075f);
             _parentTransform.anchoredPosition3D = new Vector3(0f, 115f, -0.075f);
             
             ReadyStatusTextMesh = statusParent.GetComponent<TextMeshProUGUI>();
             ReadyStatusTextMesh.font = __instance.controlTipLines[0].font;
             ReadyStatusTextMesh.fontSize = 16f;
             ReadyStatusTextMesh.enableWordWrapping = false;
-            //ReadyStatusTextMesh.color = new Color(0, 135, 32);
             ReadyStatusTextMesh.color = HUDManager.Instance.weightCounter.color;
-            //ReadyStatusTextMesh.alignment = TextAlignmentOptions.BottomRight;
             ReadyStatusTextMesh.alignment = TextAlignmentOptions.Top;
             ReadyStatusTextMesh.overflowMode = 0;
             ReadyStatusTextMesh.enabled = true;
