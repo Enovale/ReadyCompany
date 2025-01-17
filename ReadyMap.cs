@@ -24,5 +24,10 @@ namespace ReadyCompany
             
             return other.SequenceEqual(this);
         }
+
+        public override string ToString()
+        {
+            return string.Join(", ", Keys.Select(k => $"{k}: {this[k]}"));
+        }
     }
 }
