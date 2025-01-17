@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 0.3.0 (1.0.RC4)
+
+- Ready Checking is now enabled on Gordion to leave the moon.
+- LethalConfig is now an optional/soft dependency
+
 ## Version 0.2.7 (1.0.RC2)
 
 Considered feature complete; New updates will likely slow down once 1.0 is out.

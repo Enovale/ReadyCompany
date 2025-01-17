@@ -31,7 +31,6 @@ You can also add separate sounds for specifically when the lobby is ready by pla
 
 ## Planned (Maybe) Features
 
-- Option to run a ready check at the Company
 - Standby option: "i'm AFK but you can start without me"
 - Auto ready under certain user-specified conditions
 
