@@ -75,7 +75,7 @@ namespace ReadyCompany.Patches
             if (ReadyStatusTextMesh != null)
             {
                 ReadyStatusTextMesh.text = ReadyHandler.GetBriefStatusDisplay(status);
-                ReadyStatusTextMesh.gameObject.SetActive(StartOfRound.Instance.inShipPhase);
+                ReadyStatusTextMesh.gameObject.SetActive(ReadyHandler.InVotingPhase);
             }
         }
 

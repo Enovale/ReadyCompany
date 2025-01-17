@@ -32,6 +32,8 @@ namespace ReadyCompany
         
         public static event Action<ReadyMap>? NewReadyStatus;
 
+        public static bool InVotingPhase => (StartOfRound.Instance?.inShipPhase ?? false) ||
+                                            (StartOfRound.Instance?.currentLevel.levelID == 3 && StartOfRound.Instance.shipHasLanded);
         public static ulong? ActualLocalClientId => StartOfRound.Instance?.localPlayerController?.actualClientId;
         public static int? LocalPlayerId => !ActualLocalClientId.HasValue ? null : (StartOfRound.Instance?.ClientPlayerList.TryGetValue((ulong)ActualLocalClientId, out var result) ?? false ? result : null);
 
@@ -65,13 +67,14 @@ namespace ReadyCompany
             }
         }
 
-        public static bool IsLobbyReady(ReadyMap map) => map.LobbySize > 0 && map.PlayersReady / map.LobbySize >=
-            ReadyCompany.Config.PercentageForReady.Value / 100;
+        public static bool IsLobbyReady(ReadyMap map) => map.LobbySize > 0 && (float)map.PlayersReady / map.LobbySize >=
+            ReadyCompany.Config.PercentageForReady.Value / 100f;
 
         // Don't really like this method of forcing an update even if nothing's changed
         // (noone ready, reset and verify = noone ready still)
         public static void ResetReadyUp()
         {
+            ReadyCompany.Logger.LogDebug($"ReadyUp reset: {ReadyStatus.Value}");
             if (NetworkManager.Singleton != null && LNetworkUtils.IsHostOrServer)
             {
                 _playerReadyMap.Clear();
@@ -79,7 +82,7 @@ namespace ReadyCompany
             }
 
             ReadyStatusChangedReal(ReadyStatus.Value);
-            ReadyCompany.Logger.LogDebug("Resetting ready-up");
+            ReadyCompany.Logger.LogDebug($"Reset done: {ReadyStatus.Value}");
         }
 
         internal static void OnClientConnected()
@@ -97,6 +100,7 @@ namespace ReadyCompany
             if (newValue == null)
                 return;
             
+            ReadyCompany.Logger.LogDebug($"Readyup about to change: {newValue}");
             ReadyStatusChangedReal(newValue);
         }
 
@@ -109,7 +113,7 @@ namespace ReadyCompany
 
         internal static void PopupReadyStatus(ReadyMap map)
         {
-            if (HUDManager.Instance == null || !StartOfRound.Instance.inShipPhase)
+            if (HUDManager.Instance == null || !InVotingPhase)
                 return;
 
             AudioClip[] sfx;
@@ -120,8 +124,19 @@ namespace ReadyCompany
                     ? ReadyCompany.Config.CustomPopupSounds.ToArray()
                     : HUDManager.Instance.tipsSFX;
 
-            CustomDisplayTip("Ready Up!", GetBriefStatusDisplay(map), sfx);
-            //HUDManager.Instance.DisplaySpectatorTip($"{map.PlayersReady} / {map.LobbySize} Players are ready.");
+            var statusText = GetBriefStatusDisplay(map);
+            CustomDisplayTip("Ready Up!", statusText, sfx);
+            CustomDisplaySpectatorTip(statusText);
+        }
+
+        private static void CustomDisplaySpectatorTip(string body)
+        {
+            var hud = HUDManager.Instance;
+            if (hud == null)
+                return;
+            
+            hud.spectatorTipText.text = body;
+            hud.spectatorTipText.enabled = true;
         }
 
         private static void CustomDisplayTip(string headerText, string bodyText, AudioClip[]? sfx = null)
@@ -154,9 +169,10 @@ namespace ReadyCompany
 
         internal static void UpdateShipLever(ReadyMap map)
         {
-            if (StartOfRound.Instance == null || !StartOfRound.Instance.inShipPhase || StartOfRound.Instance.travellingToNewLevel)
+            if (StartOfRound.Instance == null || !InVotingPhase || StartOfRound.Instance.travellingToNewLevel)
                 return;
             
+            ReadyCompany.Logger.LogDebug($"Shiplever updating: {map}");
             var lever = UnityEngine.Object.FindObjectOfType<StartMatchLever>();
             var lobbyReady = IsLobbyReady(map);
             if (ReadyCompany.Config.RequireReadyToStart.Value)
