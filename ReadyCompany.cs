@@ -12,9 +12,9 @@ namespace ReadyCompany;
 
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
 [BepInDependency("BMX.LobbyCompatibility", BepInDependency.DependencyFlags.SoftDependency)]
+[BepInDependency("ainavt.lc.lethalconfig", BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency("LethalNetworkAPI", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency("com.rune580.LethalCompanyInputUtils", BepInDependency.DependencyFlags.HardDependency)]
-[BepInDependency("ainavt.lc.lethalconfig", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency("com.sigurd.csync", "5.0.0")] 
 public class ReadyCompany : BaseUnityPlugin
 {
@@ -29,6 +29,24 @@ public class ReadyCompany : BaseUnityPlugin
         Logger = base.Logger;
         Instance = this;
         Config = new ReadyCompanyConfig(base.Config);
+        
+        
+        if (BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("ainavt.lc.lethalconfig"))
+            InitializeLethalConfig();
+
+        if (BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("BMX.LobbyCompatibility"))
+            InitializeLobbyCompatibility();
+        
+        ReadyHandler.InitializeEvents();
+
+        Patch();
+
+        Logger.LogInfo($"{MyPluginInfo.PLUGIN_GUID} v{MyPluginInfo.PLUGIN_VERSION} has loaded!");
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+    private static void InitializeLethalConfig()
+    {
         var requireReadyToStartButton = new BoolCheckBoxConfigItem(Config.RequireReadyToStart.Entry, false);
         LethalConfigManager.AddConfigItem(requireReadyToStartButton);
         var autoStartWhenReadyButton = new BoolCheckBoxConfigItem(Config.AutoStartWhenReady.Entry, false);
@@ -72,15 +90,6 @@ public class ReadyCompany : BaseUnityPlugin
             CanModifyCallback = () => Config.UnreadyInteractionPreset.Value == InteractionPreset.Custom
         });
         LethalConfigManager.AddConfigItem(unreadyInteractionInput);
-
-        if (BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("BMX.LobbyCompatibility"))
-            InitializeLobbyCompatibility();
-        
-        ReadyHandler.InitializeEvents();
-
-        Patch();
-
-        Logger.LogInfo($"{MyPluginInfo.PLUGIN_GUID} v{MyPluginInfo.PLUGIN_VERSION} has loaded!");
     }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
