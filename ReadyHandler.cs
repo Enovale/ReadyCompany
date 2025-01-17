@@ -70,6 +70,8 @@ namespace ReadyCompany
         public static bool IsLobbyReady(ReadyMap map) => map.LobbySize > 0 && (float)map.PlayersReady / map.LobbySize >=
             ReadyCompany.Config.PercentageForReady.Value / 100f;
 
+        public static bool IsLobbyReady() => IsLobbyReady(ReadyStatus.Value);
+
         // Don't really like this method of forcing an update even if nothing's changed
         // (noone ready, reset and verify = noone ready still)
         public static void ResetReadyUp()
@@ -81,6 +83,7 @@ namespace ReadyCompany
                 UpdateReadyMap();
             }
 
+            StartMatchLeverPatches.HasShownReadyWarning = false;
             ReadyStatusChangedReal(ReadyStatus.Value);
             ReadyCompany.Logger.LogDebug($"Reset done: {ReadyStatus.Value}");
         }

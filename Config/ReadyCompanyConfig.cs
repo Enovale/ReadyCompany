@@ -19,6 +19,7 @@ namespace ReadyCompany.Config
         [field: SyncedEntryField] public SyncedEntry<bool> AutoStartWhenReady { get; private set; }
         [field: SyncedEntryField] public SyncedEntry<int> PercentageForReady { get; private set; }
 
+        public ConfigEntry<Color> StatusColor { get; private set; }
         public ConfigEntry<StatusPlacement> StatusPlacement { get; private set; }
         public ConfigEntry<bool> ShowPopup { get; private set; }
         public ConfigEntry<bool> PlaySound { get; private set; }
@@ -47,6 +48,7 @@ namespace ReadyCompany.Config
             AutoStartWhenReady.Changed += (_, _) => ReadyHandler.UpdateReadyMap();
             RequireReadyToStart.Changed += (_, _) => ReadyHandler.UpdateReadyMap();
 
+            StatusColor = cfg.Bind(CUSTOMIZATION_STRING, nameof(StatusColor), new Color(0.9528f, 0.3941f, 0, 1), "The color of the ready status text.");
             StatusPlacement = cfg.Bind(CUSTOMIZATION_STRING, nameof(StatusPlacement), Config.StatusPlacement.AboveHotbar, "Where to place the text showing the ready status.");
             ShowPopup = cfg.Bind(CUSTOMIZATION_STRING, nameof(ShowPopup), false, "Whether or not to show a popup when the ready status changes.");
             PlaySound = cfg.Bind(CUSTOMIZATION_STRING, nameof(PlaySound), true, "Whether or not to play a sound when the ready status changes.");

@@ -38,11 +38,11 @@ namespace ReadyCompany.Patches
             ReadyStatusTextMesh.font = __instance.controlTipLines[0].font;
             ReadyStatusTextMesh.fontSize = 16f;
             ReadyStatusTextMesh.enableWordWrapping = false;
-            ReadyStatusTextMesh.color = HUDManager.Instance.weightCounter.color;
+            ReadyStatusTextMesh.color = ReadyCompany.Config.StatusColor.Value;
             ReadyStatusTextMesh.alignment = TextAlignmentOptions.Top;
             ReadyStatusTextMesh.overflowMode = 0;
             ReadyStatusTextMesh.enabled = true;
-            ReadyStatusTextMesh.text = "Test Test 123123";
+            ReadyStatusTextMesh.text = "";
             
             var interactionBar = new GameObject("InteractionBar", typeof(Image), typeof(InteractionBarUI));
             var interactionBarTransform = interactionBar.GetComponent<RectTransform>();
