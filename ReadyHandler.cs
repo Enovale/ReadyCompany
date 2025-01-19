@@ -87,7 +87,7 @@ namespace ReadyCompany
             return context?.interaction;
         }
 
-        public static bool IsLobbyReady(ReadyMap map) => map.LobbySize > 0 && (float)map.PlayersReady / map.LobbySize >=
+        public static bool IsLobbyReady(ReadyMap? map) => map is { LobbySize: > 0 } && (float)map.PlayersReady / map.LobbySize >=
             ReadyCompany.Config.PercentageForReady.Value / 100f;
 
         public static bool IsLobbyReady() => IsLobbyReady(ReadyStatus.Value);
@@ -252,7 +252,7 @@ namespace ReadyCompany
 
             if (roundManager != null)
             {
-                foreach (var (clientId, playerId) in roundManager.ClientPlayerList)
+                foreach (var (_, playerId) in roundManager.ClientPlayerList)
                 {
                     _playerReadyMap.TryAdd(playerId, false);
                     
