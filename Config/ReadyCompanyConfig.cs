@@ -18,7 +18,7 @@ namespace ReadyCompany.Config
         [field: SyncedEntryField] public SyncedEntry<bool> RequireReadyToStart { get; private set; }
         [field: SyncedEntryField] public SyncedEntry<bool> AutoStartWhenReady { get; private set; }
         [field: SyncedEntryField] public SyncedEntry<int> PercentageForReady { get; private set; }
-
+        public ConfigEntry<bool> DeadPlayersCanVote { get; private set; }
         public ConfigEntry<Color> StatusColor { get; private set; }
         public ConfigEntry<StatusPlacement> StatusPlacement { get; private set; }
         public ConfigEntry<bool> ShowPopup { get; private set; }
@@ -44,9 +44,11 @@ namespace ReadyCompany.Config
             RequireReadyToStart = cfg.BindSyncedEntry(FEATURES_STRING, nameof(RequireReadyToStart), false, "Require the lobby to be Ready to pull the ship lever.");
             AutoStartWhenReady = cfg.BindSyncedEntry(FEATURES_STRING, nameof(AutoStartWhenReady), false, "Automatically pull the ship lever when the lobby is Ready.");
             PercentageForReady = cfg.BindSyncedEntry(FEATURES_STRING, nameof(PercentageForReady), 100, "What percentage of ready players is needed for the lobby to be considered \"Ready\".");
+            DeadPlayersCanVote = cfg.Bind(FEATURES_STRING, nameof(DeadPlayersCanVote), true, "Whether or not dead players are allowed to participate in the ready check or are forced to be ready. (During Company visits)");
             RequireReadyToStart.Changed += (_, _) => ReadyHandler.UpdateReadyMap();
             AutoStartWhenReady.Changed += (_, _) => ReadyHandler.UpdateReadyMap();
             RequireReadyToStart.Changed += (_, _) => ReadyHandler.UpdateReadyMap();
+            DeadPlayersCanVote.SettingChanged += (_, _) => ReadyHandler.UpdateReadyMap();
 
             StatusColor = cfg.Bind(CUSTOMIZATION_STRING, nameof(StatusColor), new Color(0.9528f, 0.3941f, 0, 1), "The color of the ready status text.");
             StatusPlacement = cfg.Bind(CUSTOMIZATION_STRING, nameof(StatusPlacement), Config.StatusPlacement.AboveHotbar, "Where to place the text showing the ready status.");
@@ -97,14 +99,22 @@ namespace ReadyCompany.Config
                 if (!new[] {".wav", ".mp3", ".ogg"}.Contains(soundFile.Extension))
                     continue;
 
+                var soundClip = AudioUtility.GetAudioClip(soundFile.FullName);
+
+                if (soundClip == null)
+                {
+                    ReadyCompany.Logger.LogError($"Failed to load audio clip: {soundFile}");
+                    continue;
+                }
+                
                 if (soundFile.IsInside(lobbyReadyPath))
                 {
-                    CustomLobbyReadySounds.Add(AudioUtility.GetAudioClip(soundFile.FullName));
+                    CustomLobbyReadySounds.Add(soundClip);
                     continue;
                 }
                 
                 ReadyCompany.Logger.LogDebug($"Loading audioclip {soundFile}");
-                CustomPopupSounds.Add(AudioUtility.GetAudioClip(soundFile.FullName));
+                CustomPopupSounds.Add(soundClip);
             }
         }
 

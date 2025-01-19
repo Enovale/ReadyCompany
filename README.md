@@ -2,7 +2,8 @@
 
 <p align="center"><img height="64" src="https://github.com/Enovale/ReadyCompany/blob/master/Package/icon.png?raw=true" alt="ReadyCompany mod icon"/></p>
 
-A mod that adds a Ready Check system, inspired by FFXIV. It is highly customizable, and built with real users in mind.
+A mod that adds a Ready Check system, inspired by FFXIV. It is highly customizable, and built with real users in mind.  
+It fully supports MoreCompany and I tried my best not to conflict with any other mods or give you the option to fix it.
 
 ## Screenshots
 
@@ -27,11 +28,11 @@ You can also add separate sounds for specifically when the lobby is ready by pla
 - When the lever hasn't been pulled yet, clients can pull the lever but it will not work.
 - When landing, sometimes the lever will keep the host Warning for all players.
 - When starting the ship clients see "0 / 3 Ready" longer than the host does
-- Not much testing has been done
 
 ## Planned (Maybe) Features
 
 - Standby option: "i'm AFK but you can start without me"
+- Countdown for lever auto pull
 - Auto ready under certain user-specified conditions
 
 # Credits

@@ -10,9 +10,9 @@ namespace ReadyCompany
         private Image image = null!;
 
         public static InteractionBarUI Instance { get; private set; } = null!;
-        
-        internal IInputInteraction? ReadyInteraction { get; set; }
-        internal IInputInteraction? UnreadyInteraction { get; set; }
+
+        internal IInputInteraction? ReadyInteraction;
+        internal IInputInteraction? UnreadyInteraction;
 
         private void Awake()
         {
