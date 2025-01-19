@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1 (1.0.RC5)
+
+- Fixed bug with Ship Lever tips not resetting
+- Changed default keybind for ready/unready to 'c'
+- Don't allow the player to vote under certain conditions
+- Show different header text in popup when lobby is ready
+- Add config option to not allow dead players to vote (Forces them to be ready)
+
 ## Version 0.3.0 (1.0.RC4)
 
 - Ready Checking is now enabled on Gordion to leave the moon.
