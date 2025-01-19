@@ -37,6 +37,8 @@ namespace ReadyCompany
         public static ulong? ActualLocalClientId => StartOfRound.Instance?.localPlayerController?.actualClientId;
         public static int? LocalPlayerId => !ActualLocalClientId.HasValue ? null : (StartOfRound.Instance?.ClientPlayerList.TryGetValue((ulong)ActualLocalClientId, out var result) ?? false ? result : null);
 
+        private static bool LocalPlayerAbleToVote => StartOfRound.Instance?.localPlayerController is { isTypingChat: false, inTerminalMenu: false, quickMenuManager.isMenuOpen: false };
+
         internal static void InitializeEvents()
         {
             ReadyStatus.Value = new(_playerReadyMap);
@@ -58,13 +60,31 @@ namespace ReadyCompany
             {
                 ReadyCompany.InputActions = new ReadyInputs();
                 ReadyCompany.InputActions.ReadyInput.performed += ReadyInputPerformed;
-                ReadyCompany.InputActions.ReadyInput.started += context => { InteractionBarUI.Instance.ReadyInteraction = context.interaction; };
-                ReadyCompany.InputActions.ReadyInput.canceled += context => { InteractionBarUI.Instance.ReadyInteraction = null; };
+                ReadyCompany.InputActions.ReadyInput.started += context => InteractionBarUI.Instance.ReadyInteraction = InputStateChanged(context);
+                ReadyCompany.InputActions.ReadyInput.canceled += context => InteractionBarUI.Instance.ReadyInteraction = InputStateChanged(null);
                 ReadyCompany.InputActions.UnreadyInput.performed += UnreadyInputPerformed;
-                ReadyCompany.InputActions.UnreadyInput.started += context => { InteractionBarUI.Instance.UnreadyInteraction = context.interaction; };
-                ReadyCompany.InputActions.UnreadyInput.canceled += context => { InteractionBarUI.Instance.UnreadyInteraction = null; };
+                ReadyCompany.InputActions.UnreadyInput.started += context => InteractionBarUI.Instance.UnreadyInteraction = InputStateChanged(context);
+                ReadyCompany.InputActions.UnreadyInput.canceled += context => InteractionBarUI.Instance.UnreadyInteraction = InputStateChanged(null);
                 ReadyCompany.Config.UpdateBindingsBasedOnConfig();
             }
+        }
+
+        private static IInputInteraction? InputStateChanged(InputAction.CallbackContext? context)
+        {
+            if (StartOfRound.Instance == null)
+                return null;
+            
+            if (!LocalPlayerAbleToVote)
+            {
+                ReadyCompany.InputActions?.ReadyInput.Disable();
+                ReadyCompany.InputActions?.ReadyInput.Enable();
+                ReadyCompany.InputActions?.UnreadyInput.Disable();
+                ReadyCompany.InputActions?.UnreadyInput.Enable();
+
+                return null;
+            }
+            
+            return context?.interaction;
         }
 
         public static bool IsLobbyReady(ReadyMap map) => map.LobbySize > 0 && (float)map.PlayersReady / map.LobbySize >=
@@ -128,7 +148,7 @@ namespace ReadyCompany
                     : HUDManager.Instance.tipsSFX;
 
             var statusText = GetBriefStatusDisplay(map);
-            CustomDisplayTip("Ready Up!", statusText, sfx);
+            CustomDisplayTip(IsLobbyReady() ? "Lobby is Ready!" : "Lobby not ready yet!", statusText, sfx);
             CustomDisplaySpectatorTip(statusText);
         }
 
@@ -172,13 +192,15 @@ namespace ReadyCompany
 
         internal static void UpdateShipLever(ReadyMap map)
         {
-            if (StartOfRound.Instance == null || !InVotingPhase || StartOfRound.Instance.travellingToNewLevel)
+            if (StartOfRound.Instance == null || !InVotingPhase)
                 return;
+
+            var shouldIgnore = StartOfRound.Instance.travellingToNewLevel || StartOfRound.Instance.newGameIsLoading;
             
             ReadyCompany.Logger.LogDebug($"Shiplever updating: {map}");
             var lever = UnityEngine.Object.FindObjectOfType<StartMatchLever>();
             var lobbyReady = IsLobbyReady(map);
-            if (ReadyCompany.Config.RequireReadyToStart.Value)
+            if (ReadyCompany.Config.RequireReadyToStart.Value && !shouldIgnore)
             {
                 lever.triggerScript.disabledHoverTip = lobbyReady ? "" : LEVER_DISABLED_TIP;
                 lever.triggerScript.hoverTip = lobbyReady ? LEVER_NORMAL_TIP : LEVER_WARNING_TIP;
@@ -221,19 +243,29 @@ namespace ReadyCompany
         {
             if (!LNetworkUtils.IsConnected)
                 return;
-            
-            foreach (var (clientId, _) in _playerReadyMap.Where(kvp => kvp.Key != LocalPlayerId && !StartOfRound.Instance.ClientPlayerList.ContainsValue(kvp.Key)).ToList())
+
+            var roundManager = StartOfRound.Instance;
+            foreach (var (clientId, _) in _playerReadyMap.Where(kvp => kvp.Key != LocalPlayerId && !roundManager.ClientPlayerList.ContainsValue(kvp.Key)).ToList())
             {
                 _playerReadyMap.Remove(clientId);
             }
 
-            if (StartOfRound.Instance != null)
+            if (roundManager != null)
             {
-                foreach (var (clientId, playerId) in StartOfRound.Instance.ClientPlayerList)
+                foreach (var (clientId, playerId) in roundManager.ClientPlayerList)
                 {
                     _playerReadyMap.TryAdd(playerId, false);
+                    
+                    if (!ReadyCompany.Config.DeadPlayersCanVote.Value)
+                    {
+                        var playerScript = roundManager.allPlayerScripts[playerId];
+                        if (playerScript.isPlayerDead || playerScript.isPlayerControlled)
+                        {
+                            _playerReadyMap[playerId] = true;
+                        }
+                    }
                 }
-                
+
                 var localPlayerId = LocalPlayerId;
                 if (localPlayerId.HasValue)
                     _playerReadyMap.TryAdd((int)localPlayerId, false);
@@ -242,7 +274,7 @@ namespace ReadyCompany
 
         private static void ReadyInputPerformed(InputAction.CallbackContext context)
         {
-            if (!LNetworkUtils.IsConnected)
+            if (!LNetworkUtils.IsConnected || !LocalPlayerAbleToVote)
                 return;
             
             if (ReadyStatus is { Value.LocalPlayerReady: false })
@@ -256,7 +288,7 @@ namespace ReadyCompany
 
         private static void UnreadyInputPerformed(InputAction.CallbackContext context)
         {
-            if (!LNetworkUtils.IsConnected)
+            if (!LNetworkUtils.IsConnected || !LocalPlayerAbleToVote)
                 return;
             
             if (ReadyStatus is { Value.LocalPlayerReady: true })
