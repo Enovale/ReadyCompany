@@ -15,28 +15,27 @@ namespace ReadyCompany;
 [BepInDependency("ainavt.lc.lethalconfig", BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency("LethalNetworkAPI", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency("com.rune580.LethalCompanyInputUtils", BepInDependency.DependencyFlags.HardDependency)]
-[BepInDependency("com.sigurd.csync", "5.0.0")] 
+[BepInDependency("com.sigurd.csync", "5.0.0")]
 public class ReadyCompany : BaseUnityPlugin
 {
     public static ReadyCompany Instance { get; private set; } = null!;
     internal new static ManualLogSource Logger { get; private set; } = null!;
     internal static Harmony? Harmony { get; set; }
     internal static ReadyInputs? InputActions { get; set; }
-    internal new static ReadyCompanyConfig Config = null!; 
+    internal new static ReadyCompanyConfig Config = null!;
 
     private void Awake()
     {
         Logger = base.Logger;
         Instance = this;
         Config = new ReadyCompanyConfig(base.Config);
-        
-        
+
         if (BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("ainavt.lc.lethalconfig"))
             InitializeLethalConfig();
 
         if (BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("BMX.LobbyCompatibility"))
             InitializeLobbyCompatibility();
-        
+
         ReadyHandler.InitializeEvents();
 
         Patch();
@@ -51,7 +50,7 @@ public class ReadyCompany : BaseUnityPlugin
         LethalConfigManager.AddConfigItem(requireReadyToStartButton);
         var autoStartWhenReadyButton = new BoolCheckBoxConfigItem(Config.AutoStartWhenReady.Entry, false);
         LethalConfigManager.AddConfigItem(autoStartWhenReadyButton);
-        var percentageForReadySlider = new IntSliderConfigItem(Config.PercentageForReady.Entry, new IntSliderOptions 
+        var percentageForReadySlider = new IntSliderConfigItem(Config.PercentageForReady.Entry, new IntSliderOptions
         {
             RequiresRestart = false,
             Min = 0,
@@ -64,7 +63,7 @@ public class ReadyCompany : BaseUnityPlugin
         LethalConfigManager.AddConfigItem(showPopupCheckbox);
         var playSoundCheckbox = new BoolCheckBoxConfigItem(Config.PlaySound, false);
         LethalConfigManager.AddConfigItem(playSoundCheckbox);
-        var soundVolumeSlider = new IntSliderConfigItem(Config.SoundVolume, new IntSliderOptions 
+        var soundVolumeSlider = new IntSliderConfigItem(Config.SoundVolume, new IntSliderOptions
         {
             RequiresRestart = false,
             Min = 0,
@@ -74,26 +73,32 @@ public class ReadyCompany : BaseUnityPlugin
         var reloadCustomSoundsButton = new GenericButtonConfigItem(ReadyCompanyConfig.CUSTOMIZATION_STRING,
             "Reload Custom Sounds", "Reloads any custom sounds from disk.", "Reload", () => Config.LoadCustomSounds());
         LethalConfigManager.AddConfigItem(reloadCustomSoundsButton);
-        var readyInteractionPreset = new EnumDropDownConfigItem<InteractionPreset>(Config.ReadyInteractionPreset, false);
+        var readyInteractionPreset =
+            new EnumDropDownConfigItem<InteractionPreset>(Config.ReadyInteractionPreset, false);
         LethalConfigManager.AddConfigItem(readyInteractionPreset);
-        var unreadyInteractionPreset = new EnumDropDownConfigItem<InteractionPreset>(Config.UnreadyInteractionPreset, false);
+        var unreadyInteractionPreset =
+            new EnumDropDownConfigItem<InteractionPreset>(Config.UnreadyInteractionPreset, false);
         LethalConfigManager.AddConfigItem(unreadyInteractionPreset);
-        var readyInteractionInput = new TextInputFieldConfigItem(Config.CustomReadyInteractionString, new TextInputFieldOptions()
-        {
-            RequiresRestart = false,
-            CanModifyCallback = () => Config.ReadyInteractionPreset.Value == InteractionPreset.Custom
-        });
+        var readyInteractionInput = new TextInputFieldConfigItem(Config.CustomReadyInteractionString,
+            new TextInputFieldOptions()
+            {
+                RequiresRestart = false,
+                CanModifyCallback = () => Config.ReadyInteractionPreset.Value == InteractionPreset.Custom
+            });
         LethalConfigManager.AddConfigItem(readyInteractionInput);
-        var unreadyInteractionInput = new TextInputFieldConfigItem(Config.CustomUnreadyInteractionString, new TextInputFieldOptions()
-        {
-            RequiresRestart = false,
-            CanModifyCallback = () => Config.UnreadyInteractionPreset.Value == InteractionPreset.Custom
-        });
+        var unreadyInteractionInput = new TextInputFieldConfigItem(Config.CustomUnreadyInteractionString,
+            new TextInputFieldOptions()
+            {
+                RequiresRestart = false,
+                CanModifyCallback = () => Config.UnreadyInteractionPreset.Value == InteractionPreset.Custom
+            });
         LethalConfigManager.AddConfigItem(unreadyInteractionInput);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    private static void InitializeLobbyCompatibility() => LobbyCompatibility.Features.PluginHelper.RegisterPlugin(MyPluginInfo.PLUGIN_GUID, new(MyPluginInfo.PLUGIN_VERSION), LobbyCompatibility.Enums.CompatibilityLevel.Everyone, LobbyCompatibility.Enums.VersionStrictness.Major);
+    private static void InitializeLobbyCompatibility() => LobbyCompatibility.Features.PluginHelper.RegisterPlugin(
+        MyPluginInfo.PLUGIN_GUID, new(MyPluginInfo.PLUGIN_VERSION),
+        LobbyCompatibility.Enums.CompatibilityLevel.Everyone, LobbyCompatibility.Enums.VersionStrictness.Major);
 
     internal static void Patch()
     {

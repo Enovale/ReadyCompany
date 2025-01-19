@@ -17,9 +17,8 @@ namespace ReadyCompany
         private void Awake()
         {
             if (Instance == null)
-            {
                 Instance = this;
-            }
+
             image = GetComponent<Image>();
         }
 
@@ -29,31 +28,23 @@ namespace ReadyCompany
                 return;
 
             var percentage = 0f;
-            if (ReadyInteraction != null && ReadyHandler.ReadyStatus is {Value.LocalPlayerReady: false})
+            if (ReadyInteraction != null && ReadyHandler.ReadyStatus is { Value.LocalPlayerReady: false })
             {
                 image.color = ReadyCompany.Config.ReadyBarColor.Value;
                 if (ReadyInteraction is MultiTapInteraction m)
-                {
                     percentage = (float)m.m_CurrentTapCount / m.tapCount;
-                }
                 else if (ReadyInteraction is HoldInteraction h)
-                {
                     percentage = (float)(Time.realtimeSinceStartupAsDouble - h.m_TimePressed) / h.durationOrDefault;
-                }
             }
-            else if (UnreadyInteraction != null && ReadyHandler.ReadyStatus is {Value.LocalPlayerReady: true})
+            else if (UnreadyInteraction != null && ReadyHandler.ReadyStatus is { Value.LocalPlayerReady: true })
             {
                 image.color = ReadyCompany.Config.UnreadyBarColor.Value;
                 if (UnreadyInteraction is MultiTapInteraction m)
-                {
                     percentage = (float)m.m_CurrentTapCount / m.tapCount;
-                }
                 else if (UnreadyInteraction is HoldInteraction h)
-                {
                     percentage = (float)(Time.realtimeSinceStartupAsDouble - h.m_TimePressed) / h.durationOrDefault;
-                }
             }
-            
+
             UpdatePercentage(percentage);
         }
 

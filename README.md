@@ -14,8 +14,8 @@ It fully supports MoreCompany and I tried my best not to conflict with any other
 
 > [!NOTE]  
 > You can change how the ready and unready binds need to be pressed to activate in LethalConfig.  
+> Theres a few built in presets for you to use, but you can fully customize it with a string, and you can use the presets for reference.  
 > The custom string is a [Unity Interactions string](https://docs.unity3d.com/Packages/com.unity.inputsystem@1.11/manual/Interactions.html).
-> A more user-friendly way to configure this may be added in the future.
 
 There is custom sound support that can be utilized by placing sound files in `BepInEx/config/Enova.ReadyCompany/CustomSounds/`.  
 Your sounds must be formatted according to [LCSoundTool's wiki](https://thunderstore.io/c/lethal-company/p/no00ob/LCSoundTool/wiki/823-loading-a-sound-file-from-disk/),
