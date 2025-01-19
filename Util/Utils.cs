@@ -16,8 +16,10 @@ namespace ReadyCompany.Util
     {
         private static readonly MethodInfo BeginSendClientRpc =
             AccessTools.Method(typeof(NetworkBehaviour), nameof(NetworkBehaviour.__beginSendClientRpc));
+
         private static readonly MethodInfo BeginSendServerRpc =
             AccessTools.Method(typeof(NetworkBehaviour), nameof(NetworkBehaviour.__beginSendServerRpc));
+
         internal static bool TryGetRpcID(MethodInfo methodInfo, out uint rpcID)
         {
             var instructions = methodInfo.GetMethodPatcher().CopyOriginal().Definition.Body.Instructions;
@@ -32,7 +34,7 @@ namespace ReadyCompany.Util
                     instructions[i].Operand is not MethodReference operand ||
                     !(operand.Is(BeginSendClientRpc) || operand.Is(BeginSendServerRpc)))
                     continue;
-            
+
                 ReadyCompany.Logger.LogDebug($"Rpc Id found for {methodInfo.Name}: {rpcID}U");
                 return true;
             }
@@ -46,7 +48,7 @@ namespace ReadyCompany.Util
             var index = Random.Range(0, Mathf.Min(1000, clipsArray.Length));
             audioSource.PlayOneShot(clipsArray[index], oneShotVolume);
         }
-        
+
         internal static bool IsInside(this DirectoryInfo path, DirectoryInfo folder)
         {
             if (path.Parent == null)
@@ -57,7 +59,7 @@ namespace ReadyCompany.Util
 
             return IsInside(path.Parent, folder);
         }
-        
+
         internal static bool IsInside(this FileInfo path, DirectoryInfo folder)
         {
             if (path.Directory == null)

@@ -20,7 +20,7 @@ namespace ReadyCompany.Patches
             var parent = __instance.HUDElements[2].canvasGroup.transform.parent;
             if (parent == null)
                 return;
-            
+
             var statusParent = new GameObject("ReadyStatusDisplay", typeof(TextMeshProUGUI), typeof(CanvasGroup));
             statusParent.transform.SetParent(parent);
             __instance.HUDElements = __instance.HUDElements.AddToArray<HUDElement>(new HUDElement
@@ -33,7 +33,7 @@ namespace ReadyCompany.Patches
             _parentTransform.sizeDelta = new Vector2(208f, 38f);
             _parentTransform.localScale = Vector3.one;
             _parentTransform.anchoredPosition3D = new Vector3(0f, 115f, -0.075f);
-            
+
             ReadyStatusTextMesh = statusParent.GetComponent<TextMeshProUGUI>();
             ReadyStatusTextMesh.font = __instance.controlTipLines[0].font;
             ReadyStatusTextMesh.fontSize = 16f;
@@ -43,7 +43,7 @@ namespace ReadyCompany.Patches
             ReadyStatusTextMesh.overflowMode = 0;
             ReadyStatusTextMesh.enabled = true;
             ReadyStatusTextMesh.text = "";
-            
+
             var interactionBar = new GameObject("InteractionBar", typeof(Image), typeof(InteractionBarUI));
             var interactionBarTransform = interactionBar.GetComponent<RectTransform>();
             interactionBarTransform.anchorMax = interactionBarTransform.pivot = new(1, 0);
@@ -56,13 +56,14 @@ namespace ReadyCompany.Patches
             interactionBarImage.sprite = CreateSpriteFromTexture(Texture2D.whiteTexture);
             interactionBarImage.color = Color.white;
             interactionBar.transform.SetParent(_parentTransform.transform, false);
-            
+
             UpdatePlacementBasedOnConfig(ReadyCompany.Config.StatusPlacement.Value);
         }
 
         private static Sprite CreateSpriteFromTexture(Texture2D texture2D)
         {
-            var val = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f));
+            var val = Sprite.Create(texture2D, new Rect(0f, 0f, texture2D.width, texture2D.height),
+                new Vector2(0.5f, 0.5f));
             val.name = texture2D.name;
             return val;
         }
@@ -80,7 +81,7 @@ namespace ReadyCompany.Patches
         {
             if (ReadyStatusTextMesh == null || _parentTransform == null)
                 return;
-            
+
             switch (placement)
             {
                 default:

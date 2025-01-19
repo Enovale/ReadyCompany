@@ -29,7 +29,7 @@ namespace ReadyCompany.Patches
             if (!ReadyHandler.InVotingPhase && HUDManager.Instance != null)
                 HUDManager.Instance.spectatorTipText.enabled = false;
         }
-        
+
         [HarmonyPatch(nameof(StartOfRound.ArriveAtLevel))]
         [HarmonyPostfix]
         public static void OnShipArriveAtLevelPatch()

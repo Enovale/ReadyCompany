@@ -7,7 +7,7 @@ namespace ReadyCompany.Util
 {
     public static class AudioUtility
     {
-        public static AudioClip? LoadFromDiskToAudioClip(string path, AudioType type)
+        private static AudioClip? LoadFromDiskToAudioClip(string path, AudioType type)
         {
             AudioClip? clip = null;
             using var uwr = UnityWebRequestMultimedia.GetAudioClip(path, type);
@@ -21,11 +21,10 @@ namespace ReadyCompany.Util
                 }
 
                 if (uwr.result != UnityWebRequest.Result.Success)
-                    ReadyCompany.Logger.LogError($"Failed to load WAV AudioClip from path: {path} Full error: {uwr.error}");
+                    ReadyCompany.Logger.LogError(
+                        $"Failed to load WAV AudioClip from path: {path} Full error: {uwr.error}");
                 else
-                {
                     clip = DownloadHandlerAudioClip.GetContent(uwr);
-                }
             }
             catch (Exception err)
             {
@@ -81,7 +80,7 @@ namespace ReadyCompany.Util
             }
 
             ReadyCompany.Logger.LogDebug($"Finished loading AudioClip {fileName} with length of {result?.length}!");
-            
+
             if (result == null)
                 return result;
 
