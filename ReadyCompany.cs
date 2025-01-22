@@ -98,7 +98,7 @@ public class ReadyCompany : BaseUnityPlugin
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     private static void InitializeLobbyCompatibility() => LobbyCompatibility.Features.PluginHelper.RegisterPlugin(
         MyPluginInfo.PLUGIN_GUID, new(MyPluginInfo.PLUGIN_VERSION),
-        LobbyCompatibility.Enums.CompatibilityLevel.Everyone, LobbyCompatibility.Enums.VersionStrictness.Major);
+        LobbyCompatibility.Enums.CompatibilityLevel.Everyone, LobbyCompatibility.Enums.VersionStrictness.Minor);
 
     internal static void Patch()
     {
