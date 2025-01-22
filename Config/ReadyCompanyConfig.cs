@@ -24,7 +24,9 @@ namespace ReadyCompany.Config
         [field: SyncedEntryField]
         public SyncedEntry<int> PercentageForReady { get; private set; }
 
-        public ConfigEntry<bool> DeadPlayersCanVote { get; private set; }
+        [field: SyncedEntryField]
+        public SyncedEntry<bool> DeadPlayersCanVote { get; private set; }
+
         public ConfigEntry<Color> StatusColor { get; private set; }
         public ConfigEntry<StatusPlacement> StatusPlacement { get; private set; }
         public ConfigEntry<bool> ShowPopup { get; private set; }
@@ -53,12 +55,12 @@ namespace ReadyCompany.Config
                 "Automatically pull the ship lever when the lobby is Ready.");
             PercentageForReady = cfg.BindSyncedEntry(FEATURES_STRING, nameof(PercentageForReady), 100,
                 "What percentage of ready players is needed for the lobby to be considered \"Ready\".");
-            DeadPlayersCanVote = cfg.Bind(FEATURES_STRING, nameof(DeadPlayersCanVote), true,
+            DeadPlayersCanVote = cfg.BindSyncedEntry(FEATURES_STRING, nameof(DeadPlayersCanVote), true,
                 "Whether or not dead players are allowed to participate in the ready check or are forced to be ready. (During Company visits)");
             RequireReadyToStart.Changed += (_, _) => ReadyHandler.UpdateReadyMap();
             AutoStartWhenReady.Changed += (_, _) => ReadyHandler.UpdateReadyMap();
             RequireReadyToStart.Changed += (_, _) => ReadyHandler.UpdateReadyMap();
-            DeadPlayersCanVote.SettingChanged += (_, _) => ReadyHandler.UpdateReadyMap();
+            DeadPlayersCanVote.Changed += (_, _) => ReadyHandler.UpdateReadyMap();
 
             StatusColor = cfg.Bind(CUSTOMIZATION_STRING, nameof(StatusColor), new Color(0.9528f, 0.3941f, 0, 1),
                 "The color of the ready status text.");

@@ -34,9 +34,24 @@ namespace ReadyCompany
 
         public static event Action<ReadyMap>? NewReadyStatus;
 
-        public static bool InVotingPhase => (StartOfRound.Instance?.inShipPhase ?? false) ||
-                                            (StartOfRound.Instance?.currentLevel.levelID == 3 &&
-                                             StartOfRound.Instance.shipHasLanded);
+        public static bool InVotingPhase
+        {
+            get
+            {
+                if (StartOfRound.Instance == null)
+                    return false;
+
+                if (!StartOfRound.Instance.shipLeftAutomatically &&
+                    !StartOfRound.Instance.newGameIsLoading &&
+                    !StartOfRound.Instance.shipIsLeaving &&
+                    (StartOfRound.Instance.inShipPhase && !StartOfRound.Instance.shipHasLanded ||
+                     (StartOfRound.Instance.currentLevel.levelID == 3 &&
+                      StartOfRound.Instance.shipHasLanded)))
+                    return true;
+
+                return false;
+            }
+        }
 
         public static ulong? ActualLocalClientId => StartOfRound.Instance?.localPlayerController?.actualClientId;
 
@@ -50,6 +65,9 @@ namespace ReadyCompany
 
         private static bool LocalPlayerAbleToVote => StartOfRound.Instance?.localPlayerController is
             { isTypingChat: false, inTerminalMenu: false, quickMenuManager.isMenuOpen: false };
+
+        private static bool LocalPlayerDead => StartOfRound.Instance?.localPlayerController is
+            { isPlayerDead: true, isPlayerControlled: false };
 
         internal static void InitializeEvents()
         {
@@ -207,25 +225,27 @@ namespace ReadyCompany
 
         internal static string GetBriefStatusDisplay(ReadyMap map) =>
             $"{map.PlayersReady} / {map.LobbySize} Players are ready.\n" +
-            (map.LocalPlayerReady
-                ? $"{ReadyCompany.InputActions?.UnreadyInputName} to Unready!"
-                : $"{ReadyCompany.InputActions?.ReadyInputName} to Ready Up!");
+            (!ReadyCompany.Config.DeadPlayersCanVote.Value && LocalPlayerDead
+                ? ""
+                : map.LocalPlayerReady
+                    ? $"{ReadyCompany.InputActions?.UnreadyInputName} to Unready!"
+                    : $"{ReadyCompany.InputActions?.ReadyInputName} to Ready Up!");
 
         internal static void UpdateShipLever(ReadyMap map)
         {
-            if (StartOfRound.Instance == null || !InVotingPhase)
+            if (StartOfRound.Instance == null)
                 return;
 
-            var shouldIgnore = StartOfRound.Instance.travellingToNewLevel || StartOfRound.Instance.newGameIsLoading;
+            var shouldIgnore = StartOfRound.Instance.travellingToNewLevel || !InVotingPhase;
 
             ReadyCompany.Logger.LogDebug($"Shiplever updating: {map}");
             var lever = UnityEngine.Object.FindObjectOfType<StartMatchLever>();
             var lobbyReady = IsLobbyReady(map);
-            if (ReadyCompany.Config.RequireReadyToStart.Value && !shouldIgnore)
+            if (ReadyCompany.Config.RequireReadyToStart.Value && !lobbyReady && !shouldIgnore)
             {
-                lever.triggerScript.disabledHoverTip = lobbyReady ? "" : LEVER_DISABLED_TIP;
-                lever.triggerScript.hoverTip = lobbyReady ? LEVER_NORMAL_TIP : LEVER_WARNING_TIP;
-                lever.triggerScript.interactable = lobbyReady || LNetworkUtils.IsHostOrServer;
+                lever.triggerScript.disabledHoverTip = LEVER_DISABLED_TIP;
+                lever.triggerScript.hoverTip = LEVER_WARNING_TIP;
+                lever.triggerScript.interactable = LNetworkUtils.IsHostOrServer;
             }
             else if (lever.triggerScript.disabledHoverTip == LEVER_DISABLED_TIP ||
                      lever.triggerScript.hoverTip == LEVER_WARNING_TIP)
@@ -235,7 +255,10 @@ namespace ReadyCompany
                 lever.triggerScript.interactable = true;
             }
 
-            if (ReadyCompany.Config.AutoStartWhenReady.Value && LNetworkUtils.IsHostOrServer && InVotingPhase && lobbyReady)
+            // This code gets run for every client connected including the host
+            // The game seems to handle this gracefully but perhaps this causes some edge case issues?
+            // Every client has to run this in case the host is dead (the lever doesn't let you pull it if you're dead)
+            if (ReadyCompany.Config.AutoStartWhenReady.Value && lobbyReady && !shouldIgnore)
             {
                 lever.LeverAnimation();
                 lever.PullLever();
@@ -252,7 +275,7 @@ namespace ReadyCompany
 
         public static void UpdateReadyMap()
         {
-            if (!LNetworkUtils.IsConnected)
+            if (!LNetworkUtils.IsConnected && !InVotingPhase)
                 return;
 
             VerifyReadyUpMap();
