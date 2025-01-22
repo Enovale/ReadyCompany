@@ -117,6 +117,7 @@ namespace ReadyCompany
             ReadyCompany.Logger.LogDebug($"ReadyUp reset: {ReadyStatus.Value}");
             if (NetworkManager.Singleton != null && LNetworkUtils.IsHostOrServer)
             {
+                ReadyCompany.Logger.LogDebug($"Real reset!");
                 _playerReadyMap.Clear();
                 UpdateReadyMap();
             }
@@ -234,7 +235,7 @@ namespace ReadyCompany
                 lever.triggerScript.interactable = true;
             }
 
-            if (ReadyCompany.Config.AutoStartWhenReady.Value && LNetworkUtils.IsHostOrServer && lobbyReady)
+            if (ReadyCompany.Config.AutoStartWhenReady.Value && LNetworkUtils.IsHostOrServer && InVotingPhase && lobbyReady)
             {
                 lever.LeverAnimation();
                 lever.PullLever();
@@ -262,7 +263,7 @@ namespace ReadyCompany
 
         private static void VerifyReadyUpMap()
         {
-            if (!LNetworkUtils.IsConnected)
+            if (!LNetworkUtils.IsConnected && !InVotingPhase)
                 return;
 
             var roundManager = StartOfRound.Instance;
@@ -281,7 +282,7 @@ namespace ReadyCompany
                     if (!ReadyCompany.Config.DeadPlayersCanVote.Value)
                     {
                         var playerScript = roundManager.allPlayerScripts[playerId];
-                        if (playerScript.isPlayerDead || playerScript.isPlayerControlled)
+                        if (playerScript.isPlayerDead && !playerScript.isPlayerControlled)
                         {
                             _playerReadyMap[playerId] = true;
                         }

@@ -14,7 +14,7 @@ namespace ReadyCompany.Patches
             if (LNetworkUtils.IsConnected && LNetworkUtils.IsHostOrServer)
             {
                 ReadyHandler.ShouldPlaySound = false;
-                ReadyHandler.UpdateReadyMap();
+                ReadyHandler.ResetReadyUp();
             }
         }
     }
