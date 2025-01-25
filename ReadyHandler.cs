@@ -39,12 +39,13 @@ namespace ReadyCompany
         {
             get
             {
-                if (StartOfRound.Instance == null)
+                if (StartOfRound.Instance == null || !LNetworkUtils.IsConnected)
                     return false;
 
                 if (!StartOfRound.Instance.shipLeftAutomatically &&
                     !StartOfRound.Instance.newGameIsLoading &&
                     !StartOfRound.Instance.shipIsLeaving &&
+                    !RoundManagerPatches.GeneratingLevel &&
                     (StartOfRound.Instance.inShipPhase && !StartOfRound.Instance.shipHasLanded ||
                      (StartOfRound.Instance.currentLevel.levelID == 3 &&
                       StartOfRound.Instance.shipHasLanded)))
@@ -182,6 +183,9 @@ namespace ReadyCompany
 
         internal static void ForceReadyStatusChanged()
         {
+            if (!LNetworkUtils.IsConnected)
+                return;
+            
             ShouldPlaySound = false;
             ReadyStatusChangedReal(ReadyStatus.Value);
         }
@@ -241,15 +245,16 @@ namespace ReadyCompany
         internal static string GetBriefStatusDisplay(ReadyMap map)
         {
             var str = new StringBuilder()
-                .Append($"{map.PlayersReady} / {map.LobbySize} Players are ready. ")
-                .Append(map.LocalPlayerReady ? "<color=\"green\">\u2713</color>" : "<color=\"red\">\u2716</color>")
+                .Append($"{map.PlayersReady} / {map.LobbySize} Players are ready.")
                 .Append("\n");
-            if (ReadyCompany.Config.DeadPlayersCanVote.Value && !LocalPlayerDead)
+            if (ReadyCompany.Config.DeadPlayersCanVote.Value || !LocalPlayerDead)
             {
                 str.Append(map.LocalPlayerReady
-                    ? $"{ReadyCompany.InputActions?.UnreadyInputName} to Unready!"
-                    : $"{ReadyCompany.InputActions?.ReadyInputName} to Ready Up!");
+                        ? $"{ReadyCompany.InputActions?.UnreadyInputName} to Unready!"
+                        : $"{ReadyCompany.InputActions?.ReadyInputName} to Ready Up!")
+                    .Append(map.LocalPlayerReady ? " <color=\"green\">\u2713</color>" : " <color=\"red\">\u2716</color>");
             }
+
             return str.ToString();
         }
 
@@ -301,7 +306,7 @@ namespace ReadyCompany
 
         public static void UpdateReadyMap()
         {
-            if (!LNetworkUtils.IsConnected || !LNetworkUtils.IsHostOrServer || !InVotingPhase)
+            if (!LNetworkUtils.IsConnected || !LNetworkUtils.IsHostOrServer)
                 return;
 
             VerifyReadyUpMap();
@@ -312,7 +317,7 @@ namespace ReadyCompany
 
         private static void VerifyReadyUpMap()
         {
-            if (!LNetworkUtils.IsConnected && !InVotingPhase)
+            if (!InVotingPhase)
                 return;
 
             var roundManager = StartOfRound.Instance;

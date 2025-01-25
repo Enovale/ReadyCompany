@@ -21,13 +21,20 @@ namespace ReadyCompany.Patches
         [HarmonyPatch(nameof(StartOfRound.SwitchMapMonitorPurpose))]
         [HarmonyPatch(nameof(StartOfRound.openingDoorsSequence), MethodType.Enumerator)]
         [HarmonyPostfix]
-        public static void OnShipReadyToLandPatch()
+        public static void NeedsResetPatches()
         {
             if (LNetworkUtils.IsConnected)
                 ReadyHandler.ResetReadyUp();
 
             if (!ReadyHandler.InVotingPhase && HUDManager.Instance != null)
                 HUDManager.Instance.spectatorTipText.enabled = false;
+        }
+
+        [HarmonyPatch(nameof(StartOfRound.openingDoorsSequence), MethodType.Enumerator)]
+        [HarmonyPostfix]
+        public static void OpeningDoorsFinished()
+        {
+            RoundManagerPatches.GeneratingLevel = false;
         }
 
         [HarmonyPatch(nameof(StartOfRound.ArriveAtLevel))]
