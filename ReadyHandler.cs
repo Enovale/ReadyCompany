@@ -55,13 +55,20 @@ namespace ReadyCompany
 
         public static ulong? ActualLocalClientId => StartOfRound.Instance?.localPlayerController?.actualClientId;
 
-        public static int? LocalPlayerId =>
-            !ActualLocalClientId.HasValue
-                ? null
-                : StartOfRound.Instance?.ClientPlayerList.TryGetValue((ulong)ActualLocalClientId, out var result) ??
-                  false
-                    ? result
-                    : null;
+        public static int? LocalPlayerId
+        {
+            get
+            {
+                if (!ActualLocalClientId.HasValue)
+                    return null;
+
+                if (StartOfRound.Instance?.ClientPlayerList.TryGetValue((ulong)ActualLocalClientId, out var result) !=
+                    null)
+                    return result;
+
+                return null;
+            }
+        }
 
         private static bool LocalPlayerAbleToVote => StartOfRound.Instance?.localPlayerController is
             { isTypingChat: false, inTerminalMenu: false, quickMenuManager.isMenuOpen: false };
@@ -100,7 +107,7 @@ namespace ReadyCompany
                 ReadyCompany.InputActions.UnreadyInput.canceled += context =>
                     InteractionBarUI.Instance.UnreadyInteraction = InputStateChanged(null);
                 ReadyCompany.Config.UpdateCustomInteractionStringsBasedOnPresets();
-                ReadyCompany.Config.UpdateBindingsBasedOnConfig();
+                ReadyCompany.Config.UpdateBindingsInteractions();
             }
         }
 
@@ -141,19 +148,13 @@ namespace ReadyCompany
             }
 
             StartMatchLeverPatches.HasShownReadyWarning = false;
-            ReadyStatusChangedReal(ReadyStatus.Value);
+            ForceReadyStatusChanged();
             ReadyCompany.Logger.LogDebug($"Reset done: {ReadyStatus.Value}");
         }
 
-        internal static void OnClientConnected()
-        {
-            UpdateReadyMap();
-        }
+        internal static void OnClientConnected() => UpdateReadyMap();
 
-        internal static void OnClientDisconnected()
-        {
-            UpdateReadyMap();
-        }
+        internal static void OnClientDisconnected() => UpdateReadyMap();
 
         private static void ReadyStatusChanged(ReadyMap oldValue, ReadyMap? newValue)
         {
@@ -166,9 +167,19 @@ namespace ReadyCompany
 
         internal static void ReadyStatusChangedReal(ReadyMap newValue)
         {
+            if (StartOfRound.Instance == null || HUDManager.Instance == null)
+                return;
+
+            ReadyCompany.Logger.LogDebug($"Readyup changed: {newValue}");
             PopupReadyStatus(newValue);
             NewReadyStatus?.Invoke(newValue);
             UpdateShipLever(newValue);
+        }
+
+        internal static void ForceReadyStatusChanged()
+        {
+            ShouldPlaySound = false;
+            ReadyStatusChangedReal(ReadyStatus.Value);
         }
 
         internal static void PopupReadyStatus(ReadyMap map)
@@ -275,7 +286,7 @@ namespace ReadyCompany
 
         public static void UpdateReadyMap()
         {
-            if (!LNetworkUtils.IsConnected && !InVotingPhase)
+            if (!LNetworkUtils.IsConnected || !LNetworkUtils.IsHostOrServer || !InVotingPhase)
                 return;
 
             VerifyReadyUpMap();
@@ -325,8 +336,8 @@ namespace ReadyCompany
 
             if (ReadyStatus is { Value.LocalPlayerReady: false })
             {
-                ReadyCompany.InputActions?.UnreadyInput.Disable();
-                ReadyCompany.InputActions?.UnreadyInput.Enable();
+                ReadyCompany.InputActions!.UnreadyInput.Disable();
+                ReadyCompany.InputActions.UnreadyInput.Enable();
             }
 
             readyUpMessage.SendServer(true);
@@ -339,8 +350,8 @@ namespace ReadyCompany
 
             if (ReadyStatus is { Value.LocalPlayerReady: true })
             {
-                ReadyCompany.InputActions?.ReadyInput.Disable();
-                ReadyCompany.InputActions?.ReadyInput.Enable();
+                ReadyCompany.InputActions!.ReadyInput.Disable();
+                ReadyCompany.InputActions.ReadyInput.Enable();
             }
 
             readyUpMessage.SendServer(false);

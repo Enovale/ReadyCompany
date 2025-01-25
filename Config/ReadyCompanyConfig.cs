@@ -89,8 +89,8 @@ namespace ReadyCompany.Config
                 SetInteractionStringBasedOnPreset(CustomReadyInteractionString, ReadyInteractionPreset.Value);
             UnreadyInteractionPreset.SettingChanged += (_, _) =>
                 SetInteractionStringBasedOnPreset(CustomUnreadyInteractionString, UnreadyInteractionPreset.Value);
-            CustomReadyInteractionString.SettingChanged += (_, _) => UpdateBindingsBasedOnConfig();
-            CustomUnreadyInteractionString.SettingChanged += (_, _) => UpdateBindingsBasedOnConfig();
+            CustomReadyInteractionString.SettingChanged += (_, _) => UpdateBindingsInteractions();
+            CustomUnreadyInteractionString.SettingChanged += (_, _) => UpdateBindingsInteractions();
 
             LoadCustomSounds();
 
@@ -129,6 +129,12 @@ namespace ReadyCompany.Config
             }
         }
 
+        internal void UpdateCustomInteractionStringsBasedOnPresets()
+        {
+            SetInteractionStringBasedOnPreset(CustomReadyInteractionString, ReadyInteractionPreset.Value);
+            SetInteractionStringBasedOnPreset(CustomUnreadyInteractionString, UnreadyInteractionPreset.Value);
+        }
+
         private void SetInteractionStringBasedOnPreset(ConfigEntry<string> config, InteractionPreset value) =>
             config.Value = GetInteractionStringBasedOnPreset(value) ?? config.Value;
 
@@ -144,31 +150,22 @@ namespace ReadyCompany.Config
                 _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
             };
 
-        internal void UpdateCustomInteractionStringsBasedOnPresets()
+        internal void UpdateBindingsInteractions()
         {
-            SetInteractionStringBasedOnPreset(CustomReadyInteractionString, ReadyInteractionPreset.Value);
-            SetInteractionStringBasedOnPreset(CustomUnreadyInteractionString, UnreadyInteractionPreset.Value);
+            if (ReadyCompany.InputActions == null)
+                return;
+            
+            ReadyCompany.Logger.LogDebug("Update bindings!");
+            UpdateBindingInteraction(ReadyCompany.InputActions.ReadyInput, CustomReadyInteractionString.Value);
+            UpdateBindingInteraction(ReadyCompany.InputActions.UnreadyInput, CustomUnreadyInteractionString.Value);
         }
 
-        internal void UpdateBindingsBasedOnConfig()
+        internal void UpdateBindingInteraction(InputAction action, string interactions)
         {
-            if (ReadyCompany.InputActions == null) return;
-
-            var kbmBindingReady = ReadyCompany.InputActions.ReadyInput.bindings[0];
-            kbmBindingReady.overrideInteractions = CustomReadyInteractionString.Value;
-            ReadyCompany.InputActions.ReadyInput.ApplyBindingOverride(0, kbmBindingReady);
-
-            var gmpBindingReady = ReadyCompany.InputActions.ReadyInput.bindings[1];
-            gmpBindingReady.overrideInteractions = CustomReadyInteractionString.Value;
-            ReadyCompany.InputActions.ReadyInput.ApplyBindingOverride(1, gmpBindingReady);
-
-            var kbmBindingUnready = ReadyCompany.InputActions.UnreadyInput.bindings[0];
-            kbmBindingUnready.overrideInteractions = CustomUnreadyInteractionString.Value;
-            ReadyCompany.InputActions.UnreadyInput.ApplyBindingOverride(0, kbmBindingUnready);
-
-            var gmpBindingUnready = ReadyCompany.InputActions.UnreadyInput.bindings[1];
-            gmpBindingUnready.overrideInteractions = CustomUnreadyInteractionString.Value;
-            ReadyCompany.InputActions.UnreadyInput.ApplyBindingOverride(1, gmpBindingUnready);
+            foreach (var binding in action.bindings)
+            {
+                action.ChangeBinding(binding).To(binding with {interactions = interactions});
+            }
         }
     }
 }

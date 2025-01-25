@@ -26,7 +26,7 @@ You can also add separate sounds for specifically when the lobby is ready by pla
 
 - Lever tooltips are sometimes inaccurate to vanilla when lobby is ready
 - When the lever hasn't been pulled yet, clients can pull the lever but it will not work.
-- When landing, sometimes the lever will keep the host Warning for all players.
+- ~~When landing, sometimes the lever will keep the host Warning for all players.~~ (*Should* be fixed)
 - When starting the ship clients see "0 / 3 Ready" longer than the host does
 
 ## Planned (Maybe) Features
