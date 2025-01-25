@@ -43,6 +43,10 @@ namespace ReadyCompany.Patches
             ReadyStatusTextMesh.overflowMode = 0;
             ReadyStatusTextMesh.enabled = true;
             ReadyStatusTextMesh.text = "";
+            
+            // Tips panel text doesn't support the unicode we use so add a font that does to the fallback table
+            __instance.tipsPanelHeader.m_fontAsset.fallbackFontAssetTable.Add(ReadyStatusTextMesh.font);
+            __instance.tipsPanelBody.m_fontAsset.fallbackFontAssetTable.Add(ReadyStatusTextMesh.font);
 
             var interactionBar = new GameObject("InteractionBar", typeof(Image), typeof(InteractionBarUI));
             var interactionBarTransform = interactionBar.GetComponent<RectTransform>();
