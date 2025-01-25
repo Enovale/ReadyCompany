@@ -10,7 +10,9 @@ namespace ReadyCompany.Config
         [InputAction("<Keyboard>/c", GamepadPath = "<Gamepad>/select", Name = "Unready", ActionType = InputActionType.Button)]
         public InputAction UnreadyInput { get; set; } = null!;
 
-        public string ReadyInputName => ReadyInput.bindings[0].ToDisplayString();
-        public string UnreadyInputName => UnreadyInput.bindings[0].ToDisplayString();
+        internal int CurrentBinding => StartOfRound.Instance?.localPlayerUsingController ?? false ? 1 : 0;
+
+        public string ReadyInputName => ReadyInput.bindings[CurrentBinding].ToDisplayString();
+        public string UnreadyInputName => UnreadyInput.bindings[CurrentBinding].ToDisplayString();
     }
 }

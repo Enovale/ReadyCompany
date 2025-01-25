@@ -14,8 +14,8 @@ namespace ReadyCompany.Patches
         public static bool UpdatePatch(StartMatchLever __instance)
         {
             if (ReadyHandler.InVotingPhase &&
-                (__instance.triggerScript.disabledHoverTip == ReadyHandler.LEVER_DISABLED_TIP ||
-                 __instance.triggerScript.hoverTip == ReadyHandler.LEVER_WARNING_TIP))
+                (string.Equals(__instance.triggerScript.disabledHoverTip, ReadyHandler.LEVER_DISABLED_TIP) ||
+                 string.Equals(__instance.triggerScript.hoverTip, ReadyHandler.LEVER_WARNING_TIP)))
                 return false;
 
             return true;
