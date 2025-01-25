@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using LethalNetworkAPI;
 using LethalNetworkAPI.Utils;
 using ReadyCompany.Config;
@@ -237,13 +238,20 @@ namespace ReadyCompany
             ShouldPlaySound = true;
         }
 
-        internal static string GetBriefStatusDisplay(ReadyMap map) =>
-            $"{map.PlayersReady} / {map.LobbySize} Players are ready.\n" +
-            (!ReadyCompany.Config.DeadPlayersCanVote.Value && LocalPlayerDead
-                ? ""
-                : map.LocalPlayerReady
+        internal static string GetBriefStatusDisplay(ReadyMap map)
+        {
+            var str = new StringBuilder()
+                .Append($"{map.PlayersReady} / {map.LobbySize} Players are ready. ")
+                .Append(map.LocalPlayerReady ? "<color=\"green\">\u2713</color>" : "<color=\"red\">\u2716</color>")
+                .Append("\n");
+            if (ReadyCompany.Config.DeadPlayersCanVote.Value && !LocalPlayerDead)
+            {
+                str.Append(map.LocalPlayerReady
                     ? $"{ReadyCompany.InputActions?.UnreadyInputName} to Unready!"
                     : $"{ReadyCompany.InputActions?.ReadyInputName} to Ready Up!");
+            }
+            return str.ToString();
+        }
 
         internal static bool ShouldOverrideLeverState(ReadyMap map) => ReadyCompany.Config.RequireReadyToStart.Value &&
                                                                        InVotingPhase &&
@@ -257,7 +265,6 @@ namespace ReadyCompany
 
             var shouldOverrideLeverState = ShouldOverrideLeverState(map);
             var lever = UnityEngine.Object.FindObjectOfType<StartMatchLever>();
-            var lobbyReady = IsLobbyReady(map);
             if (shouldOverrideLeverState)
             {
                 lever.triggerScript.disabledHoverTip = LEVER_DISABLED_TIP;
@@ -277,7 +284,7 @@ namespace ReadyCompany
             // This code gets run for every client connected including the host
             // The game seems to handle this gracefully but perhaps this causes some edge case issues?
             // Every client has to run this in case the host is dead (the lever doesn't let you pull it if you're dead)
-            if (ReadyCompany.Config.AutoStartWhenReady.Value && lobbyReady && !shouldOverrideLeverState)
+            if (ReadyCompany.Config.AutoStartWhenReady.Value && InVotingPhase && !StartOfRound.Instance.travellingToNewLevel && IsLobbyReady(map))
             {
                 lever.LeverAnimation();
                 lever.PullLever();
