@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.0
+
+- Added colored checkmark/cross to indicate readiness
+- Ready check disappears at the same time for clients and server
+- Fixed bug where rebinding an input would cause interactions to be lost
+- Show gamepad bindings when it's active
+- Fixed a few bugs regarding incorrect hover tips on start match lever
+- Fixed start match lever hover tips showing when they should not
+- Prevent voting when special menus are open (belt bag)
+- Only update and verify the ready status if you are the host player.
+
 ## 0.4.0 (1.0.RC6)
 
 - Fixed issue where keybinds are not setup until a save is loaded
