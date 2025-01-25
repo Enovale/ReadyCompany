@@ -13,9 +13,7 @@ namespace ReadyCompany.Patches
         [HarmonyPrefix]
         public static bool UpdatePatch(StartMatchLever __instance)
         {
-            if (ReadyHandler.InVotingPhase &&
-                (string.Equals(__instance.triggerScript.disabledHoverTip, ReadyHandler.LEVER_DISABLED_TIP) ||
-                 string.Equals(__instance.triggerScript.hoverTip, ReadyHandler.LEVER_WARNING_TIP)))
+            if (ReadyHandler.ShouldOverrideLeverState(ReadyHandler.ReadyStatus.Value))
                 return false;
 
             return true;

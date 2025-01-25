@@ -245,36 +245,39 @@ namespace ReadyCompany
                     ? $"{ReadyCompany.InputActions?.UnreadyInputName} to Unready!"
                     : $"{ReadyCompany.InputActions?.ReadyInputName} to Ready Up!");
 
+        internal static bool ShouldOverrideLeverState(ReadyMap map) => ReadyCompany.Config.RequireReadyToStart.Value &&
+                                                                       InVotingPhase &&
+                                                                       !IsLobbyReady(map) &&
+                                                                       !StartOfRound.Instance.travellingToNewLevel;
+
         internal static void UpdateShipLever(ReadyMap map)
         {
             if (StartOfRound.Instance == null)
                 return;
 
-            var shouldIgnore = StartOfRound.Instance.travellingToNewLevel || !InVotingPhase;
-            ReadyCompany.Logger.LogDebug($"Ship Lever shouldIgnore: {shouldIgnore}");
-
-            ReadyCompany.Logger.LogDebug($"Shiplever updating: {map}");
+            var shouldOverrideLeverState = ShouldOverrideLeverState(map);
             var lever = UnityEngine.Object.FindObjectOfType<StartMatchLever>();
             var lobbyReady = IsLobbyReady(map);
-            if (ReadyCompany.Config.RequireReadyToStart.Value && !lobbyReady && !shouldIgnore)
+            if (shouldOverrideLeverState)
             {
                 lever.triggerScript.disabledHoverTip = LEVER_DISABLED_TIP;
                 lever.triggerScript.hoverTip = LEVER_WARNING_TIP;
                 lever.triggerScript.interactable = LNetworkUtils.IsHostOrServer;
             }
             else if (string.Equals(lever.triggerScript.disabledHoverTip, LEVER_DISABLED_TIP) ||
+                     string.Equals(lever.triggerScript.disabledHoverTip, LEVER_WARNING_TIP) ||
                      string.Equals(lever.triggerScript.hoverTip, LEVER_WARNING_TIP))
             {
-                ReadyCompany.Logger.LogDebug("Lever clearing!");
-                lever.triggerScript.disabledHoverTip = "";
-                lever.triggerScript.hoverTip = LEVER_NORMAL_TIP;
+                lever.triggerScript.disabledHoverTip = string.Empty;
+                lever.triggerScript.hoverTip = string.Empty;
                 lever.triggerScript.interactable = true;
+                lever.updateInterval = 0f;
             }
 
             // This code gets run for every client connected including the host
             // The game seems to handle this gracefully but perhaps this causes some edge case issues?
             // Every client has to run this in case the host is dead (the lever doesn't let you pull it if you're dead)
-            if (ReadyCompany.Config.AutoStartWhenReady.Value && lobbyReady && !shouldIgnore)
+            if (ReadyCompany.Config.AutoStartWhenReady.Value && lobbyReady && !shouldOverrideLeverState)
             {
                 lever.LeverAnimation();
                 lever.PullLever();
