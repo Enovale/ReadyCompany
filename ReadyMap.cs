@@ -16,6 +16,7 @@ namespace ReadyCompany
         public bool LocalPlayerReady => ReadyHandler.LocalPlayerId.HasValue &&
                                         TryGetValue((int)ReadyHandler.LocalPlayerId, out var result) && result;
 
+        // This is the only override needed to cause LethalNetworkAPI to trigger a change event
         public override bool Equals(object? obj)
         {
             if (obj is null) return false;

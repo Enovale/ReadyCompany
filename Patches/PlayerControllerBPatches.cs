@@ -7,6 +7,8 @@ namespace ReadyCompany.Patches
     [HarmonyPatch(typeof(PlayerControllerB))]
     internal class PlayerControllerBPatches
     {
+        private static bool _localPlayerUsingControllerPreviously;
+        
         [HarmonyPatch(nameof(PlayerControllerB.ConnectClientToPlayerObject))]
         [HarmonyPostfix]
         public static void PlayerLoadedPatch()
@@ -16,6 +18,19 @@ namespace ReadyCompany.Patches
                 ReadyHandler.ShouldPlaySound = false;
                 ReadyHandler.ResetReadyUp();
             }
+        }
+
+        [HarmonyPatch(nameof(PlayerControllerB.Look_performed))]
+        [HarmonyPostfix]
+        public static void LookPerformedPatch()
+        {
+            if (StartOfRound.Instance == null)
+                return;
+
+            if (StartOfRound.Instance.localPlayerUsingController != _localPlayerUsingControllerPreviously)
+                ReadyHandler.ForceReadyStatusChanged();
+            
+            _localPlayerUsingControllerPreviously = StartOfRound.Instance.localPlayerUsingController;
         }
     }
 }

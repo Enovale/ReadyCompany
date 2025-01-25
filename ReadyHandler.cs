@@ -71,7 +71,7 @@ namespace ReadyCompany
         }
 
         private static bool LocalPlayerAbleToVote => StartOfRound.Instance?.localPlayerController is
-            { isTypingChat: false, inTerminalMenu: false, quickMenuManager.isMenuOpen: false };
+            { isTypingChat: false, inTerminalMenu: false, inSpecialMenu: false, quickMenuManager.isMenuOpen: false };
 
         private static bool LocalPlayerDead => StartOfRound.Instance?.localPlayerController is
             { isPlayerDead: true, isPlayerControlled: false };
@@ -159,7 +159,10 @@ namespace ReadyCompany
         private static void ReadyStatusChanged(ReadyMap oldValue, ReadyMap? newValue)
         {
             if (newValue == null)
+            {
+                ReadyCompany.Logger.LogDebug("ReadyStatusChanged newValue is null");
                 return;
+            }
 
             ReadyCompany.Logger.LogDebug($"Readyup about to change: {newValue}");
             ReadyStatusChangedReal(newValue);
@@ -248,6 +251,7 @@ namespace ReadyCompany
                 return;
 
             var shouldIgnore = StartOfRound.Instance.travellingToNewLevel || !InVotingPhase;
+            ReadyCompany.Logger.LogDebug($"Ship Lever shouldIgnore: {shouldIgnore}");
 
             ReadyCompany.Logger.LogDebug($"Shiplever updating: {map}");
             var lever = UnityEngine.Object.FindObjectOfType<StartMatchLever>();
@@ -258,9 +262,10 @@ namespace ReadyCompany
                 lever.triggerScript.hoverTip = LEVER_WARNING_TIP;
                 lever.triggerScript.interactable = LNetworkUtils.IsHostOrServer;
             }
-            else if (lever.triggerScript.disabledHoverTip == LEVER_DISABLED_TIP ||
-                     lever.triggerScript.hoverTip == LEVER_WARNING_TIP)
+            else if (string.Equals(lever.triggerScript.disabledHoverTip, LEVER_DISABLED_TIP) ||
+                     string.Equals(lever.triggerScript.hoverTip, LEVER_WARNING_TIP))
             {
+                ReadyCompany.Logger.LogDebug("Lever clearing!");
                 lever.triggerScript.disabledHoverTip = "";
                 lever.triggerScript.hoverTip = LEVER_NORMAL_TIP;
                 lever.triggerScript.interactable = true;
