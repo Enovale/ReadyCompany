@@ -4,6 +4,8 @@ using UnityEngine.InputSystem;
 namespace ReadyCompany.Patches
 {
     [HarmonyPatch(typeof(InputActionMap))]
+    [HarmonyPriority(Priority.HigherThanNormal)]
+    [HarmonyWrapSafe]
     internal class InputActionMapPatches
     {
         [HarmonyPatch(nameof(InputActionMap.OnBindingModified))]

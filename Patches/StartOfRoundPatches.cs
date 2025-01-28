@@ -19,6 +19,7 @@ namespace ReadyCompany.Patches
         [HarmonyPatch(nameof(StartOfRound.SetShipReadyToLand))]
         [HarmonyPatch(nameof(StartOfRound.StartGame))]
         [HarmonyPatch(nameof(StartOfRound.SwitchMapMonitorPurpose))]
+        [HarmonyPatch(nameof(StartOfRound.SceneManager_OnLoad))]
         [HarmonyPatch(nameof(StartOfRound.openingDoorsSequence), MethodType.Enumerator)]
         [HarmonyPostfix]
         public static void NeedsResetPatches()
@@ -28,13 +29,6 @@ namespace ReadyCompany.Patches
 
             if (!ReadyHandler.InVotingPhase && HUDManager.Instance != null)
                 HUDManager.Instance.spectatorTipText.enabled = false;
-        }
-
-        [HarmonyPatch(nameof(StartOfRound.openingDoorsSequence), MethodType.Enumerator)]
-        [HarmonyPostfix]
-        public static void OpeningDoorsFinished()
-        {
-            RoundManagerPatches.GeneratingLevel = false;
         }
 
         [HarmonyPatch(nameof(StartOfRound.ArriveAtLevel))]

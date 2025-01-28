@@ -7,6 +7,8 @@ using UnityEngine.UI;
 namespace ReadyCompany.Patches
 {
     [HarmonyPatch(typeof(HUDManager))]
+    [HarmonyPriority(Priority.HigherThanNormal)]
+    [HarmonyWrapSafe]
     internal class HUDPatches
     {
         internal static TextMeshProUGUI? ReadyStatusTextMesh;
