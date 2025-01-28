@@ -5,6 +5,8 @@ using LethalNetworkAPI.Utils;
 namespace ReadyCompany.Patches
 {
     [HarmonyPatch(typeof(PlayerControllerB))]
+    [HarmonyPriority(Priority.HigherThanNormal)]
+    [HarmonyWrapSafe]
     internal class PlayerControllerBPatches
     {
         private static bool _localPlayerUsingControllerPreviously;

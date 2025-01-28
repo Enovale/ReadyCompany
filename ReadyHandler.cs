@@ -45,9 +45,9 @@ namespace ReadyCompany
                 if (!StartOfRound.Instance.shipLeftAutomatically &&
                     !StartOfRound.Instance.newGameIsLoading &&
                     !StartOfRound.Instance.shipIsLeaving &&
-                    !RoundManagerPatches.GeneratingLevel &&
+                    !(HUDManager.Instance?.loadingText.enabled ?? false) &&
                     (StartOfRound.Instance.inShipPhase && !StartOfRound.Instance.shipHasLanded ||
-                     (StartOfRound.Instance.currentLevel.levelID == 3 &&
+                     ((!StartOfRound.Instance.currentLevel.spawnEnemiesAndScrap && !StartOfRound.Instance.currentLevel.planetHasTime) &&
                       StartOfRound.Instance.shipHasLanded)))
                     return true;
 
@@ -244,6 +244,9 @@ namespace ReadyCompany
 
         internal static string GetBriefStatusDisplay(ReadyMap map)
         {
+            if (map.LobbySize <= 0)
+                return string.Empty;
+            
             var str = new StringBuilder()
                 .Append($"{map.PlayersReady} / {map.LobbySize} Players are ready.")
                 .Append("\n");
