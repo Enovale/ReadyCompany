@@ -72,10 +72,10 @@ namespace ReadyCompany
             }
         }
 
-        private static bool LocalPlayerAbleToVote => StartOfRound.Instance?.localPlayerController is
+        internal static bool LocalPlayerAbleToVote => StartOfRound.Instance?.localPlayerController is
             { isTypingChat: false, inTerminalMenu: false, inSpecialMenu: false, quickMenuManager.isMenuOpen: false };
 
-        private static bool LocalPlayerDead => StartOfRound.Instance?.localPlayerController is
+        internal static bool LocalPlayerDead => StartOfRound.Instance?.localPlayerController is
             { isPlayerDead: true, isPlayerControlled: false };
 
         internal static void InitializeEvents()
@@ -120,10 +120,7 @@ namespace ReadyCompany
 
             if (!LocalPlayerAbleToVote)
             {
-                ReadyCompany.InputActions?.ReadyInput.Disable();
-                ReadyCompany.InputActions?.ReadyInput.Enable();
-                ReadyCompany.InputActions?.UnreadyInput.Disable();
-                ReadyCompany.InputActions?.UnreadyInput.Enable();
+                context?.Reset();
 
                 return null;
             }
