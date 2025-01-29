@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0
+
+- Fixed many bugs associated with the ship lever and it's tooltips
+- MagicWesley's Galetry starts a vote just like Gordion
+(along with any other custom moon that 1. Does not have time and 2. Does not spawn scrap)
+- Ready status text disappears almost immediately on the client as well as the server
+
 ## 1.0.0
 
 - Added colored checkmark/cross to indicate readiness
