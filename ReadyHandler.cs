@@ -21,7 +21,6 @@ namespace ReadyCompany
 
         internal const string LEVER_DISABLED_TIP = "[ Lobby must be ready to start ]";
         internal const string LEVER_WARNING_TIP = "[ WARNING: Lobby Not Ready ]";
-        internal const string LEVER_NORMAL_TIP = "Start game : [LMB]";
 
         public static LNetworkVariable<ReadyMap> ReadyStatus { get; } =
             LNetworkVariable<ReadyMap>.Connect(identifier: READY_STATUS_SIG, onValueChanged: ReadyStatusChanged);
@@ -45,6 +44,7 @@ namespace ReadyCompany
                 if (!StartOfRound.Instance.shipLeftAutomatically &&
                     !StartOfRound.Instance.newGameIsLoading &&
                     !StartOfRound.Instance.shipIsLeaving &&
+                    !StartOfRound.Instance.firingPlayersCutsceneRunning &&
                     !(HUDManager.Instance?.loadingText.enabled ?? false) &&
                     (StartOfRound.Instance.inShipPhase && !StartOfRound.Instance.shipHasLanded ||
                      ((!StartOfRound.Instance.currentLevel.spawnEnemiesAndScrap && !StartOfRound.Instance.currentLevel.planetHasTime) &&
@@ -192,7 +192,7 @@ namespace ReadyCompany
 
         internal static void PopupReadyStatus(ReadyMap map)
         {
-            if (HUDManager.Instance == null || !InVotingPhase)
+            if (HUDManager.Instance == null || !InVotingPhase || map.LobbySize <= 0)
                 return;
 
             AudioClip[] sfx;
@@ -268,31 +268,17 @@ namespace ReadyCompany
 
         internal static void UpdateShipLever(ReadyMap map)
         {
-            if (StartOfRound.Instance == null)
+            if (StartOfRound.Instance == null || map.LobbySize <= 0)
                 return;
 
-            var shouldOverrideLeverState = ShouldOverrideLeverState(map);
             var lever = UnityEngine.Object.FindObjectOfType<StartMatchLever>();
-            if (shouldOverrideLeverState)
-            {
-                lever.triggerScript.disabledHoverTip = LEVER_DISABLED_TIP;
-                lever.triggerScript.hoverTip = LEVER_WARNING_TIP;
-                lever.triggerScript.interactable = LNetworkUtils.IsHostOrServer;
-            }
-            else if (string.Equals(lever.triggerScript.disabledHoverTip, LEVER_DISABLED_TIP) ||
-                     string.Equals(lever.triggerScript.disabledHoverTip, LEVER_WARNING_TIP) ||
-                     string.Equals(lever.triggerScript.hoverTip, LEVER_WARNING_TIP))
-            {
-                lever.triggerScript.disabledHoverTip = string.Empty;
-                lever.triggerScript.hoverTip = string.Empty;
-                lever.triggerScript.interactable = true;
-                lever.updateInterval = 0f;
-            }
+            lever.updateInterval = 0.000000001f;
 
             // This code gets run for every client connected including the host
             // The game seems to handle this gracefully but perhaps this causes some edge case issues?
             // Every client has to run this in case the host is dead (the lever doesn't let you pull it if you're dead)
-            if (ReadyCompany.Config.AutoStartWhenReady.Value && InVotingPhase && !StartOfRound.Instance.travellingToNewLevel && IsLobbyReady(map))
+            if (ReadyCompany.Config.AutoStartWhenReady.Value && InVotingPhase &&
+                !StartOfRound.Instance.travellingToNewLevel && IsLobbyReady(map))
             {
                 lever.LeverAnimation();
                 lever.PullLever();
