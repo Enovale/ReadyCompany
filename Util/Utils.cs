@@ -8,6 +8,7 @@ using Mono.Cecil.Cil;
 using MonoMod.Utils;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Random = UnityEngine.Random;
 
 namespace ReadyCompany.Util
@@ -47,6 +48,12 @@ namespace ReadyCompany.Util
         {
             var index = Random.Range(0, Mathf.Min(1000, clipsArray.Length));
             audioSource.PlayOneShot(clipsArray[index], oneShotVolume);
+        }
+
+        internal static void Reset(this InputAction.CallbackContext context)
+        {
+            context.action.Disable();
+            context.action.Enable();
         }
 
         internal static bool IsInside(this DirectoryInfo path, DirectoryInfo folder)
