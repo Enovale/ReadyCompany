@@ -24,9 +24,8 @@ You can also add separate sounds for specifically when the lobby is ready by pla
 
 ## Known Issues
 
-- Lever tooltips are sometimes inaccurate to vanilla when lobby is ready
-- When the lever hasn't been pulled yet, clients can pull the lever but it will not work.
-- ~~When landing, sometimes the lever will keep the host Warning for all players.~~ (*Should* be fixed)
+- Lever tooltips are sometimes inaccurate to vanilla
+(Can't fix until LethalLevelLoader fixes it first, but it has been improved)
 
 ## Planned (Maybe) Features
 

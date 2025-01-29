@@ -5,6 +5,7 @@ namespace ReadyCompany.Patches
 {
     [HarmonyPatch(typeof(StartMatchLever))]
     [HarmonyAfter("imabatby.lethallevelloader")]
+    [HarmonyWrapSafe]
     internal class StartMatchLeverPatches
     {
         public static bool HasShownReadyWarning;
