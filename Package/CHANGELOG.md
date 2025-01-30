@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1
+
+- Fixed an issue where the player would erroniously toggle ready state while pressing 
+the bind in a pause menu or in the terminal using the Hold interaction
+
 ## 1.1.0
 
 - Fixed many bugs associated with the ship lever and it's tooltips
