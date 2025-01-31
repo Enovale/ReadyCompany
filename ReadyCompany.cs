@@ -57,10 +57,14 @@ public class ReadyCompany : BaseUnityPlugin
             Max = 100
         });
         LethalConfigManager.AddConfigItem(percentageForReadySlider);
+        var deadPlayersCanVoteButton = new BoolCheckBoxConfigItem(Config.DeadPlayersCanVote.Entry, false);
+        LethalConfigManager.AddConfigItem(deadPlayersCanVoteButton);
+        var readyAllowedNotInShipButton = new BoolCheckBoxConfigItem(Config.ReadyAllowedWhenNotInShip.Entry, false);
+        LethalConfigManager.AddConfigItem(readyAllowedNotInShipButton);
         var statusPlacementDropdown = new EnumDropDownConfigItem<StatusPlacement>(Config.StatusPlacement, false);
         LethalConfigManager.AddConfigItem(statusPlacementDropdown);
-        var showPopupCheckbox = new BoolCheckBoxConfigItem(Config.ShowPopup, false);
-        LethalConfigManager.AddConfigItem(showPopupCheckbox);
+        var statusStyleDropdown = new EnumDropDownConfigItem<StatusStyle>(Config.StatusStyle, false);
+        LethalConfigManager.AddConfigItem(statusStyleDropdown);
         var playSoundCheckbox = new BoolCheckBoxConfigItem(Config.PlaySound, false);
         LethalConfigManager.AddConfigItem(playSoundCheckbox);
         var soundVolumeSlider = new IntSliderConfigItem(Config.SoundVolume, new IntSliderOptions

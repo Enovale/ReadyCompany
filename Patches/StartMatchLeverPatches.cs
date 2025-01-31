@@ -47,7 +47,6 @@ namespace ReadyCompany.Patches
                 _previousInteractableState = ___triggerScript.interactable;
             }
             
-            // This might (?) allow the host to pull the lever even if LethalLevelLoader doesn't want us to
             if (_shouldOverrideLeverState)
             {
                 var interactable = _previousInteractableState ? LNetworkUtils.IsHostOrServer : _previousInteractableState;

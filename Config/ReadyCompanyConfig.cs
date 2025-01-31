@@ -27,9 +27,14 @@ namespace ReadyCompany.Config
         [field: SyncedEntryField]
         public SyncedEntry<bool> DeadPlayersCanVote { get; private set; }
 
+        [field: SyncedEntryField]
+        public SyncedEntry<bool> ReadyAllowedWhenNotInShip { get; private set; }
+
         public ConfigEntry<Color> StatusColor { get; private set; }
         public ConfigEntry<StatusPlacement> StatusPlacement { get; private set; }
-        public ConfigEntry<bool> ShowPopup { get; private set; }
+        public ConfigEntry<StatusStyle> StatusStyle { get; private set; }
+        public bool HudTextEnabled => StatusStyle.Value is not Config.StatusStyle.Popup;
+        public bool PopupEnabled => StatusStyle.Value is Config.StatusStyle.Popup or Config.StatusStyle.Both;
         public ConfigEntry<bool> PlaySound { get; private set; }
         public ConfigEntry<int> SoundVolume { get; private set; }
 
@@ -57,21 +62,26 @@ namespace ReadyCompany.Config
                 "What percentage of ready players is needed for the lobby to be considered \"Ready\".");
             DeadPlayersCanVote = cfg.BindSyncedEntry(FEATURES_STRING, nameof(DeadPlayersCanVote), true,
                 "Whether or not dead players are allowed to participate in the ready check or are forced to be ready. (During Company visits)");
+            ReadyAllowedWhenNotInShip = cfg.BindSyncedEntry(FEATURES_STRING, nameof(ReadyAllowedWhenNotInShip), true,
+                "Whether or not people who are outside the ship are forced to not be ready. (During Company visits)");
             RequireReadyToStart.Changed += (_, _) => ReadyHandler.UpdateReadyMap();
             AutoStartWhenReady.Changed += (_, _) => ReadyHandler.UpdateReadyMap();
             RequireReadyToStart.Changed += (_, _) => ReadyHandler.UpdateReadyMap();
             DeadPlayersCanVote.Changed += (_, _) => ReadyHandler.UpdateReadyMap();
+            ReadyAllowedWhenNotInShip.Changed += (_, _) => ReadyHandler.UpdateReadyMap();
 
             StatusColor = cfg.Bind(CUSTOMIZATION_STRING, nameof(StatusColor), new Color(0.9528f, 0.3941f, 0, 1),
                 "The color of the ready status text.");
             StatusPlacement = cfg.Bind(CUSTOMIZATION_STRING, nameof(StatusPlacement),
                 Config.StatusPlacement.AboveHotbar, "Where to place the text showing the ready status.");
-            ShowPopup = cfg.Bind(CUSTOMIZATION_STRING, nameof(ShowPopup), false,
-                "Whether or not to show a popup when the ready status changes.");
+            StatusStyle = cfg.Bind(CUSTOMIZATION_STRING, nameof(StatusStyle), Config.StatusStyle.HudText,
+                "How to show the current ready status. HudText is a persistent bit of text placed according to StatusPlacement, " +
+                "Popup is the vanilla hint popup with the ready status inside whenever it changes..");
             PlaySound = cfg.Bind(CUSTOMIZATION_STRING, nameof(PlaySound), true,
                 "Whether or not to play a sound when the ready status changes.");
             SoundVolume = cfg.Bind(CUSTOMIZATION_STRING, nameof(SoundVolume), 100, "The volume of the popup sound.");
             StatusPlacement.SettingChanged += (_, _) => HUDPatches.UpdatePlacementBasedOnConfig(StatusPlacement.Value);
+            StatusStyle.SettingChanged += (_, _) => HUDPatches.SetTextActive(HudTextEnabled);
 
             ReadyBarColor = cfg.Bind(INTERACTION_STRING, nameof(ReadyBarColor), Color.white,
                 "What color the bar should be when holding the bind.");
