@@ -12,6 +12,7 @@ namespace ReadyCompany.Patches
         public static void MainMenuLoaded()
         {
             ReadyHandler.ResetReadyUp();
+            PlayerControllerBPatches.Reset();
         }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using GameNetcodeStuff;
 using LethalNetworkAPI;
 using LethalNetworkAPI.Utils;
 using ReadyCompany.Config;
@@ -34,6 +35,9 @@ namespace ReadyCompany
 
         public static event Action<ReadyMap>? NewReadyStatus;
 
+        public static bool MoonIsSellMoon => !StartOfRound.Instance.currentLevel.spawnEnemiesAndScrap &&
+                                               !StartOfRound.Instance.currentLevel.planetHasTime;
+
         public static bool InVotingPhase
         {
             get
@@ -47,8 +51,7 @@ namespace ReadyCompany
                     !StartOfRound.Instance.firingPlayersCutsceneRunning &&
                     !(HUDManager.Instance?.loadingText.enabled ?? false) &&
                     (StartOfRound.Instance.inShipPhase && !StartOfRound.Instance.shipHasLanded ||
-                     ((!StartOfRound.Instance.currentLevel.spawnEnemiesAndScrap && !StartOfRound.Instance.currentLevel.planetHasTime) &&
-                      StartOfRound.Instance.shipHasLanded)))
+                     (MoonIsSellMoon && StartOfRound.Instance.shipHasLanded)))
                     return true;
 
                 return false;
@@ -73,10 +76,23 @@ namespace ReadyCompany
         }
 
         internal static bool LocalPlayerAbleToVote => StartOfRound.Instance?.localPlayerController is
-            { isTypingChat: false, inTerminalMenu: false, inSpecialMenu: false, quickMenuManager.isMenuOpen: false };
+                                                      {
+                                                          isTypingChat: false, inTerminalMenu: false,
+                                                          inSpecialMenu: false, quickMenuManager.isMenuOpen: false
+                                                      } && PlayerAbleToVoteServer(StartOfRound.Instance.localPlayerController);
 
-        internal static bool LocalPlayerDead => StartOfRound.Instance?.localPlayerController is
-            { isPlayerDead: true, isPlayerControlled: false };
+        private static bool IsPlayerDead(PlayerControllerB? player)
+        {
+            return player is { isPlayerDead: true, isPlayerControlled: false };
+        }
+
+        public static bool PlayerAbleToVoteServer(PlayerControllerB player)
+        {
+            var playerIsInElevator = ReadyCompany.Config.ReadyAllowedWhenNotInShip.Value || player.isInElevator;
+            var playerIsAlive = ReadyCompany.Config.DeadPlayersCanVote.Value || !IsPlayerDead(player);
+
+            return playerIsAlive && playerIsInElevator;
+        }
 
         internal static void InitializeEvents()
         {
@@ -221,11 +237,12 @@ namespace ReadyCompany
             if (hud == null)
                 return;
 
-            if (ReadyCompany.Config.ShowPopup.Value)
+            if (ReadyCompany.Config.PopupEnabled)
             {
                 hud.tipsPanelHeader.text = headerText;
                 hud.tipsPanelBody.text = bodyText;
-                hud.tipsPanelAnimator.SetTrigger("TriggerHint");
+                if (ShouldPlaySound)
+                    hud.tipsPanelAnimator.SetTrigger("TriggerHint");
             }
 
             if (ReadyCompany.Config.PlaySound.Value && ShouldPlaySound)
@@ -244,16 +261,23 @@ namespace ReadyCompany
             if (map.LobbySize <= 0)
                 return string.Empty;
             
-            var str = new StringBuilder()
-                .Append($"{map.PlayersReady} / {map.LobbySize} Players are ready.")
-                .Append("\n");
-            if (ReadyCompany.Config.DeadPlayersCanVote.Value || !LocalPlayerDead)
+            var str = new StringBuilder();
+
+            if (ReadyCompany.Config.StatusStyle.Value is not StatusStyle.None)
             {
-                str.Append(map.LocalPlayerReady
-                        ? $"{ReadyCompany.InputActions?.UnreadyInputName} to Unready!"
-                        : $"{ReadyCompany.InputActions?.ReadyInputName} to Ready Up!")
-                    .Append(map.LocalPlayerReady ? " <color=\"green\">\u2713</color>" : " <color=\"red\">\u2716</color>");
+                str.Append($"{map.PlayersReady} / {map.LobbySize} Players are ready.")
+                    .Append("\n");
+                if (LocalPlayerAbleToVote)
+                {
+                    str.Append(map.LocalPlayerReady
+                        ? $"{ReadyCompany.InputActions?.UnreadyInputName} to Unready! "
+                        : $"{ReadyCompany.InputActions?.ReadyInputName} to Ready Up! ");
+                }
             }
+
+            str.Append(map.LocalPlayerReady
+                ? "<color=\"green\">\u2713</color>"
+                : "<color=\"red\">\u2716</color>");
 
             return str.ToString();
         }
@@ -319,12 +343,20 @@ namespace ReadyCompany
                 {
                     _playerReadyMap.TryAdd(playerId, false);
 
+                    var playerScript = roundManager.allPlayerScripts[playerId];
                     if (!ReadyCompany.Config.DeadPlayersCanVote.Value)
                     {
-                        var playerScript = roundManager.allPlayerScripts[playerId];
-                        if (playerScript.isPlayerDead && !playerScript.isPlayerControlled)
+                        if (IsPlayerDead(playerScript))
                         {
                             _playerReadyMap[playerId] = true;
+                        }
+                    }
+
+                    if (!ReadyCompany.Config.ReadyAllowedWhenNotInShip.Value)
+                    {
+                        if (!playerScript.isInElevator && !IsPlayerDead(playerScript))
+                        {
+                            _playerReadyMap[playerId] = false;
                         }
                     }
                 }
@@ -363,7 +395,7 @@ namespace ReadyCompany
             readyUpMessage.SendServer(false);
         }
 
-        private static int TryGetPlayerIdFromClientId(ulong clientId)
+        internal static int TryGetPlayerIdFromClientId(ulong clientId)
         {
             return (StartOfRound.Instance?.ClientPlayerList.TryGetValue(clientId, out var playerId) ?? false)
                 ? playerId

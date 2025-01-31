@@ -43,7 +43,7 @@ namespace ReadyCompany.Patches
             ReadyStatusTextMesh.color = ReadyCompany.Config.StatusColor.Value;
             ReadyStatusTextMesh.alignment = TextAlignmentOptions.Top;
             ReadyStatusTextMesh.overflowMode = 0;
-            ReadyStatusTextMesh.enabled = true;
+            ReadyStatusTextMesh.enabled = ReadyCompany.Config.HudTextEnabled;
             ReadyStatusTextMesh.text = "";
             
             // Tips panel text doesn't support the unicode we use so add a font that does to the fallback table
@@ -72,6 +72,12 @@ namespace ReadyCompany.Patches
                 new Vector2(0.5f, 0.5f));
             val.name = texture2D.name;
             return val;
+        }
+
+        public static void SetTextActive(bool active)
+        {
+            if (ReadyStatusTextMesh != null)
+                ReadyStatusTextMesh.enabled = active;
         }
 
         public static void UpdateTextBasedOnStatus(ReadyMap status)
