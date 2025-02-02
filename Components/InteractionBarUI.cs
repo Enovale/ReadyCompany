@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Interactions;
 using UnityEngine.UI;
 
-namespace ReadyCompany
+namespace ReadyCompany.Components
 {
     public class InteractionBarUI : MonoBehaviour
     {

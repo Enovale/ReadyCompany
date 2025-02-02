@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using LethalNetworkAPI;
 using LethalNetworkAPI.Utils;
+using ReadyCompany.Components;
 using ReadyCompany.Config;
 using ReadyCompany.Patches;
 using ReadyCompany.Util;
@@ -23,7 +24,7 @@ namespace ReadyCompany
         internal const string LEVER_WARNING_TIP = "[ WARNING: Lobby Not Ready ]";
 
         public static LNetworkVariable<ReadyMap> ReadyStatus { get; } =
-            LNetworkVariable<ReadyMap>.Connect(identifier: READY_STATUS_SIG, onValueChanged: ReadyStatusChanged);
+            LNetworkVariable<ReadyMap>.Connect(identifier: READY_STATUS_SIG, onValueChanged: ReadyStatusValueChanged);
 
         private static readonly LNetworkMessage<bool> readyUpMessage =
             LNetworkMessage<bool>.Connect(identifier: READY_EVENT_SIG, ReadyUpFromClient);
@@ -32,7 +33,7 @@ namespace ReadyCompany
 
         internal static bool ShouldPlaySound { get; set; }
 
-        public static event Action<ReadyMap>? NewReadyStatus;
+        public static event Action<ReadyMap>? ReadyStatusChanged;
 
         public static bool InVotingPhase
         {
@@ -84,7 +85,6 @@ namespace ReadyCompany
             // There's a weird bug where sometimes the input system isn't initialized at Awake()
             // So we defer it to the first scene load instead
             SceneManager.sceneLoaded += OnSceneLoaded;
-            NewReadyStatus += HUDPatches.UpdateTextBasedOnStatus;
         }
 
         private static void OnSceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
@@ -155,7 +155,7 @@ namespace ReadyCompany
 
         internal static void OnClientDisconnected() => UpdateReadyMap();
 
-        private static void ReadyStatusChanged(ReadyMap oldValue, ReadyMap? newValue)
+        private static void ReadyStatusValueChanged(ReadyMap oldValue, ReadyMap? newValue)
         {
             if (newValue == null)
             {
@@ -174,8 +174,7 @@ namespace ReadyCompany
 
             ReadyCompany.Logger.LogDebug($"Readyup changed: {newValue}");
             PopupReadyStatus(newValue);
-            NewReadyStatus?.Invoke(newValue);
-            UpdateShipLever(newValue);
+            ReadyStatusChanged?.Invoke(newValue);
         }
 
         internal static void ForceReadyStatusChanged()
@@ -218,7 +217,7 @@ namespace ReadyCompany
         private static void CustomDisplayTip(string headerText, string bodyText, AudioClip[]? sfx = null)
         {
             var hud = HUDManager.Instance;
-            if (hud == null)
+            if (hud is null)
                 return;
 
             if (ReadyCompany.Config.ShowPopup.Value)
@@ -262,25 +261,6 @@ namespace ReadyCompany
                                                                        InVotingPhase &&
                                                                        !IsLobbyReady(map) &&
                                                                        !StartOfRound.Instance.travellingToNewLevel;
-
-        internal static void UpdateShipLever(ReadyMap map)
-        {
-            if (StartOfRound.Instance == null || map.LobbySize <= 0)
-                return;
-
-            var lever = UnityEngine.Object.FindObjectOfType<StartMatchLever>();
-            lever.updateInterval = 0.000000001f;
-
-            // This code gets run for every client connected including the host
-            // The game seems to handle this gracefully but perhaps this causes some edge case issues?
-            // Every client has to run this in case the host is dead (the lever doesn't let you pull it if you're dead)
-            if (ReadyCompany.Config.AutoStartWhenReady.Value && InVotingPhase &&
-                !StartOfRound.Instance.travellingToNewLevel && IsLobbyReady(map))
-            {
-                lever.LeverAnimation();
-                lever.PullLever();
-            }
-        }
 
         private static void ReadyUpFromClient(bool isReady, ulong clientId)
         {
@@ -337,7 +317,7 @@ namespace ReadyCompany
 
         private static void ReadyInputPerformed(InputAction.CallbackContext context)
         {
-            if (!LNetworkUtils.IsConnected || !LocalPlayerAbleToVote)
+            if (!LNetworkUtils.IsConnected || !LocalPlayerAbleToVote || !InVotingPhase)
                 return;
 
             if (ReadyStatus is { Value.LocalPlayerReady: false })
@@ -351,7 +331,7 @@ namespace ReadyCompany
 
         private static void UnreadyInputPerformed(InputAction.CallbackContext context)
         {
-            if (!LNetworkUtils.IsConnected || !LocalPlayerAbleToVote)
+            if (!LNetworkUtils.IsConnected || !LocalPlayerAbleToVote || !InVotingPhase)
                 return;
 
             if (ReadyStatus is { Value.LocalPlayerReady: true })

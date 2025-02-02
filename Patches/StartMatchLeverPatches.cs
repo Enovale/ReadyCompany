@@ -1,5 +1,6 @@
 using HarmonyLib;
 using LethalNetworkAPI.Utils;
+using ReadyCompany.Components;
 
 namespace ReadyCompany.Patches
 {
@@ -9,6 +10,7 @@ namespace ReadyCompany.Patches
     internal class StartMatchLeverPatches
     {
         public static bool HasShownReadyWarning;
+        public static ReadyCountdown CountdownComponent = null!;
         
         private static bool _shouldOverrideLeverState;
 
@@ -19,11 +21,12 @@ namespace ReadyCompany.Patches
 
         [HarmonyPatch(nameof(StartMatchLever.Start))]
         [HarmonyPostfix]
-        public static void StartPatch(InteractTrigger ___triggerScript)
+        public static void StartPatch(StartMatchLever __instance, InteractTrigger ___triggerScript)
         {
             _previousHoverTip = ___triggerScript.hoverTip;
             _previousDisabledHoverTip = ___triggerScript.disabledHoverTip;
             _previousInteractableState = ___triggerScript.interactable;
+            CountdownComponent = __instance.gameObject.AddComponent<ReadyCountdown>();
         }
 
         [HarmonyPatch(nameof(StartMatchLever.Update))]

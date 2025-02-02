@@ -37,7 +37,7 @@ namespace ReadyCompany
 
             var other = (ReadyMap)obj;
 
-            return other.SequenceEqual(this);
+            return Mathf.Approximately(other.Timestamp, Timestamp) && other.SequenceEqual(this);
         }
 
         public override void GetObjectData(SerializationInfo info, StreamingContext context)

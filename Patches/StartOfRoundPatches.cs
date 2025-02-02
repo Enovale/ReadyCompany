@@ -18,6 +18,7 @@ namespace ReadyCompany.Patches
 
         [HarmonyPatch(nameof(StartOfRound.SetShipReadyToLand))]
         [HarmonyPatch(nameof(StartOfRound.StartGame))]
+        [HarmonyPatch(nameof(StartOfRound.ShipLeave))]
         [HarmonyPatch(nameof(StartOfRound.SwitchMapMonitorPurpose))]
         [HarmonyPatch(nameof(StartOfRound.SceneManager_OnLoad))]
         [HarmonyPatch(nameof(StartOfRound.openingDoorsSequence), MethodType.Enumerator)]
@@ -36,7 +37,9 @@ namespace ReadyCompany.Patches
         public static void OnShipArriveAtLevelPatch()
         {
             if (LNetworkUtils.IsConnected && LNetworkUtils.IsHostOrServer)
-                ReadyHandler.UpdateShipLever(ReadyHandler.ReadyStatus.Value);
+            {
+                ReadyHandler.UpdateReadyMap();
+            }
         }
     }
 }

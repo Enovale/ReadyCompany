@@ -1,4 +1,5 @@
 using HarmonyLib;
+using ReadyCompany.Components;
 using ReadyCompany.Config;
 using TMPro;
 using UnityEngine;
@@ -15,9 +16,14 @@ namespace ReadyCompany.Patches
 
         private static RectTransform? _parentTransform;
 
+        static HUDPatches()
+        {
+            ReadyHandler.ReadyStatusChanged += UpdateTextBasedOnStatus;
+        }
+
         [HarmonyPatch(nameof(HUDManager.Awake))]
         [HarmonyPostfix]
-        private static void Start(ref HUDManager __instance)
+        private static void Awake(ref HUDManager __instance)
         {
             var parent = __instance.HUDElements[2].canvasGroup.transform.parent;
             if (parent == null)

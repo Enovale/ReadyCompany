@@ -25,6 +25,12 @@ namespace ReadyCompany.Config
         public SyncedEntry<int> PercentageForReady { get; private set; }
 
         [field: SyncedEntryField]
+        public SyncedEntry<bool> CountdownEnabled { get; private set; }
+
+        [field: SyncedEntryField]
+        public SyncedEntry<float> CountdownTime { get; private set; }
+
+        [field: SyncedEntryField]
         public SyncedEntry<bool> DeadPlayersCanVote { get; private set; }
 
         public ConfigEntry<Color> StatusColor { get; private set; }
@@ -55,6 +61,10 @@ namespace ReadyCompany.Config
                 "Automatically pull the ship lever when the lobby is Ready.");
             PercentageForReady = cfg.BindSyncedEntry(FEATURES_STRING, nameof(PercentageForReady), 100,
                 "What percentage of ready players is needed for the lobby to be considered \"Ready\".");
+            CountdownEnabled = cfg.BindSyncedEntry(FEATURES_STRING, nameof(CountdownEnabled), false,
+                "Perform a countdown before pulling the lever when the lobby is ready.");
+            CountdownTime = cfg.BindSyncedEntry(FEATURES_STRING, nameof(CountdownTime), 3f,
+                "How long to perform the countdown.");
             DeadPlayersCanVote = cfg.BindSyncedEntry(FEATURES_STRING, nameof(DeadPlayersCanVote), true,
                 "Whether or not dead players are allowed to participate in the ready check or are forced to be ready. (During Company visits)");
             RequireReadyToStart.Changed += (_, _) => ReadyHandler.UpdateReadyMap();
