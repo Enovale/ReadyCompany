@@ -57,6 +57,15 @@ public class ReadyCompany : BaseUnityPlugin
             Max = 100
         });
         LethalConfigManager.AddConfigItem(percentageForReadySlider);
+        var countdownEnabledCheckbox = new BoolCheckBoxConfigItem(Config.CountdownEnabled.Entry, true);
+        LethalConfigManager.AddConfigItem(countdownEnabledCheckbox);
+        var countdownTimeSlider = new IntSliderConfigItem(Config.CountdownTime.Entry, new IntSliderOptions
+        {
+            RequiresRestart = false,
+            Min = 1,
+            Max = 60,
+        });
+        LethalConfigManager.AddConfigItem(countdownTimeSlider);
         var statusPlacementDropdown = new EnumDropDownConfigItem<StatusPlacement>(Config.StatusPlacement, false);
         LethalConfigManager.AddConfigItem(statusPlacementDropdown);
         var showPopupCheckbox = new BoolCheckBoxConfigItem(Config.ShowPopup, false);

@@ -18,7 +18,7 @@ namespace ReadyCompany.Patches
 
         static HUDPatches()
         {
-            ReadyHandler.ReadyStatusChanged += UpdateTextBasedOnStatus;
+            ReadyHandler.ReadyStatusUpdated += UpdateTextBasedOnStatus;
         }
 
         [HarmonyPatch(nameof(HUDManager.Awake))]

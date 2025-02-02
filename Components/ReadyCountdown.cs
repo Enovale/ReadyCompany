@@ -1,6 +1,4 @@
-using System;
 using LethalNetworkAPI.Utils;
-using ReadyCompany.Util;
 using UnityEngine;
 
 namespace ReadyCompany.Components
@@ -14,13 +12,14 @@ namespace ReadyCompany.Components
         private void Awake()
         {
             _lever = GetComponent<StartMatchLever>();
-            ReadyHandler.ReadyStatusChanged += ReadyStatusChanged;
+            ReadyHandler.ReadyStatusUpdated += ReadyStatusUpdated;
         }
 
-        private void ReadyStatusChanged(ReadyMap map)
+        private void ReadyStatusUpdated(ReadyMap map)
         {
             var mapEmpty = map.LobbySize <= 0;
-            _canPullLever = !mapEmpty && ReadyHandler.InVotingPhase && !StartOfRound.Instance.travellingToNewLevel && ReadyHandler.IsLobbyReady(map);
+            _canPullLever = !mapEmpty && ReadyHandler.InVotingPhase &&
+                            !StartOfRound.Instance.travellingToNewLevel && ReadyHandler.IsLobbyReady(map);
             _currentReadyMap = map;
             
             if (!mapEmpty)
@@ -31,21 +30,24 @@ namespace ReadyCompany.Components
         {
             if (_canPullLever)
             {
-                if (ReadyCompany.Config.AutoStartWhenReady.Value && ReadyCompany.Config.CountdownEnabled.Value)
+                if (ReadyCompany.Config.AutoStartWhenReady.Value)
                 {
-                    var timeSinceReady = Time.time - _currentReadyMap.Timestamp;
-                    var secondsSinceReady = Mathf.FloorToInt(timeSinceReady);
-
-                    if (Mathf.FloorToInt(timeSinceReady - (Time.fixedDeltaTime)) < secondsSinceReady)
+                    if (ReadyCompany.Config.CountdownEnabled.Value)
                     {
-                        var countdownTime = ReadyCompany.Config.CountdownTime.Value - timeSinceReady;
+                        var timeSinceReady = Time.time - _currentReadyMap.Timestamp;
+                        var secondsSinceReady = Mathf.FloorToInt(timeSinceReady);
 
-                        CountdownUpdate(countdownTime);
+                        if (Mathf.FloorToInt(timeSinceReady - Time.fixedDeltaTime) < secondsSinceReady)
+                        {
+                            var countdownTime = ReadyCompany.Config.CountdownTime.Value - timeSinceReady;
+
+                            CountdownUpdate(countdownTime);
+                        }
                     }
-                }
-                else if (ReadyCompany.Config.AutoStartWhenReady.Value)
-                {
-                    PullLever();
+                    else
+                    {
+                        PullLever();
+                    }
                 }
             }
         }
@@ -64,23 +66,30 @@ namespace ReadyCompany.Components
 
         private void CountdownUpdate(float time)
         {
-            var countdownStr = time.ToString("N0");
+            var roundedTime = Mathf.RoundToInt(time);
+            var countdownStr = roundedTime;
             ReadyCompany.Logger.LogDebug($"{time} {countdownStr}");
             
             var hud = HUDManager.Instance;
             if (hud is null)
                 return;
-            Utils.PlayRandomClip(hud.UIAudio, hud.warningSFX, ReadyCompany.Config.SoundVolume.Value / 100f);
+
+            var bodyText = $"Lever will pull in {countdownStr} second{(roundedTime is not (1 or -1) ? "s" : string.Empty)}";
+            var sfx = ReadyCompany.Config.CustomCountdownSounds.ToArray();
+            var clipToPlay = sfx;
+
+            if (sfx.Length > 0)
+                clipToPlay = [sfx[roundedTime % sfx.Length]];
+            ReadyHandler.CustomDisplayTip("Ready Countdown", bodyText, clipToPlay, true);
+            ReadyHandler.CustomDisplaySpectatorTip(bodyText);
 
             if (time <= 0)
-            {
                 PullLever();
-            }
         }
 
         ~ReadyCountdown()
         {
-            ReadyHandler.ReadyStatusChanged -= ReadyStatusChanged;
+            ReadyHandler.ReadyStatusUpdated -= ReadyStatusUpdated;
         }
     }
 }

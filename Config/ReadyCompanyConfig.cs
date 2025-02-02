@@ -28,7 +28,7 @@ namespace ReadyCompany.Config
         public SyncedEntry<bool> CountdownEnabled { get; private set; }
 
         [field: SyncedEntryField]
-        public SyncedEntry<float> CountdownTime { get; private set; }
+        public SyncedEntry<int> CountdownTime { get; private set; }
 
         [field: SyncedEntryField]
         public SyncedEntry<bool> DeadPlayersCanVote { get; private set; }
@@ -48,6 +48,7 @@ namespace ReadyCompany.Config
 
         internal List<AudioClip> CustomPopupSounds { get; private set; } = [];
         internal List<AudioClip> CustomLobbyReadySounds { get; private set; } = [];
+        internal List<AudioClip> CustomCountdownSounds { get; private set; } = [];
 
         internal const string FEATURES_STRING = "Features";
         internal const string CUSTOMIZATION_STRING = "Customization";
@@ -63,8 +64,8 @@ namespace ReadyCompany.Config
                 "What percentage of ready players is needed for the lobby to be considered \"Ready\".");
             CountdownEnabled = cfg.BindSyncedEntry(FEATURES_STRING, nameof(CountdownEnabled), false,
                 "Perform a countdown before pulling the lever when the lobby is ready.");
-            CountdownTime = cfg.BindSyncedEntry(FEATURES_STRING, nameof(CountdownTime), 3f,
-                "How long to perform the countdown.");
+            CountdownTime = cfg.BindSyncedEntry(FEATURES_STRING, nameof(CountdownTime), 3,
+                "How long to perform the countdown, in seconds.");
             DeadPlayersCanVote = cfg.BindSyncedEntry(FEATURES_STRING, nameof(DeadPlayersCanVote), true,
                 "Whether or not dead players are allowed to participate in the ready check or are forced to be ready. (During Company visits)");
             RequireReadyToStart.Changed += (_, _) => ReadyHandler.UpdateReadyMap();
@@ -80,7 +81,7 @@ namespace ReadyCompany.Config
                 "Whether or not to show a popup when the ready status changes.");
             PlaySound = cfg.Bind(CUSTOMIZATION_STRING, nameof(PlaySound), true,
                 "Whether or not to play a sound when the ready status changes.");
-            SoundVolume = cfg.Bind(CUSTOMIZATION_STRING, nameof(SoundVolume), 100, "The volume of the popup sound.");
+            SoundVolume = cfg.Bind(CUSTOMIZATION_STRING, nameof(SoundVolume), 100, "The volume of the popup and countdown sound.");
             StatusPlacement.SettingChanged += (_, _) => HUDPatches.UpdatePlacementBasedOnConfig(StatusPlacement.Value);
 
             ReadyBarColor = cfg.Bind(INTERACTION_STRING, nameof(ReadyBarColor), Color.white,
@@ -111,10 +112,11 @@ namespace ReadyCompany.Config
         {
             CustomPopupSounds.Clear();
             CustomLobbyReadySounds.Clear();
+            CustomCountdownSounds.Clear();
             var soundPath =
                 Directory.CreateDirectory(Path.Combine(Paths.ConfigPath, MyPluginInfo.PLUGIN_GUID, "CustomSounds"));
             var lobbyReadyPath = soundPath.CreateSubdirectory("LobbyReady");
-
+            var countdownPath = soundPath.CreateSubdirectory("Countdown");
             foreach (var soundFile in soundPath.EnumerateFiles("*.*", SearchOption.AllDirectories))
             {
                 if (!new[] { ".wav", ".mp3", ".ogg" }.Contains(soundFile.Extension))
@@ -128,14 +130,23 @@ namespace ReadyCompany.Config
                     continue;
                 }
 
-                if (soundFile.IsInside(lobbyReadyPath))
-                {
-                    CustomLobbyReadySounds.Add(soundClip);
-                    continue;
-                }
-
                 ReadyCompany.Logger.LogDebug($"Loading audioclip {soundFile}");
-                CustomPopupSounds.Add(soundClip);
+                if (soundFile.IsInside(lobbyReadyPath))
+                    CustomLobbyReadySounds.Add(soundClip);
+                else if (soundFile.IsInside(countdownPath))
+                    CustomCountdownSounds.Add(soundClip);
+                else
+                    CustomPopupSounds.Add(soundClip);
+            }
+
+            if (CustomCountdownSounds.Count > 0)
+            {
+                CustomCountdownSounds = CustomCountdownSounds.OrderBy(a =>
+                {
+                    if (int.TryParse(a.name.GetNumbers(), out var index))
+                        return index;
+                    return int.MaxValue;
+                }).ToList();
             }
         }
 

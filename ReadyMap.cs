@@ -37,7 +37,17 @@ namespace ReadyCompany
 
             var other = (ReadyMap)obj;
 
-            return Mathf.Approximately(other.Timestamp, Timestamp) && other.SequenceEqual(this);
+            //var timestampsEqual = Mathf.Approximately(other.Timestamp, Timestamp);
+            var timestampsEqual = true;
+            return timestampsEqual && other.SequenceEqual(this);
+        }
+
+        public bool StateEquals(ReadyMap? other)
+        {
+            if (other is null) return false;
+            if (ReferenceEquals(this, other)) return true;
+            
+            return other.SequenceEqual(this);
         }
 
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
@@ -46,9 +56,7 @@ namespace ReadyCompany
             base.GetObjectData(info, context);
         }
 
-        public override string ToString()
-        {
-            return $"ReadyMap ({Timestamp}) - " + string.Join(", ", Keys.Select(k => $"{k}: {this[k]}"));
-        }
+        public override string ToString() =>
+            $"ReadyMap ({Timestamp}) - " + string.Join(", ", Keys.Select(k => $"{k}: {this[k]}"));
     }
 }

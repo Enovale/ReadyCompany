@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using HarmonyLib.Public.Patching;
@@ -49,6 +50,8 @@ namespace ReadyCompany.Util
             var index = Random.Range(0, Mathf.Min(1000, clipsArray.Length));
             audioSource.PlayOneShot(clipsArray[index], oneShotVolume);
         }
+        
+        internal static string GetNumbers(this string input) => new(input.Where(char.IsDigit).ToArray());
 
         internal static void Reset(this InputAction.CallbackContext context)
         {

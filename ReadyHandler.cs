@@ -33,7 +33,8 @@ namespace ReadyCompany
 
         internal static bool ShouldPlaySound { get; set; }
 
-        public static event Action<ReadyMap>? ReadyStatusChanged;
+        public static event Action<ReadyMap>? ReadyStatusUpdated;
+        public static event Action<ReadyMap?, ReadyMap>? ReadyStatusChanged;
 
         public static bool InVotingPhase
         {
@@ -48,7 +49,8 @@ namespace ReadyCompany
                     !StartOfRound.Instance.firingPlayersCutsceneRunning &&
                     !(HUDManager.Instance?.loadingText.enabled ?? false) &&
                     (StartOfRound.Instance.inShipPhase && !StartOfRound.Instance.shipHasLanded ||
-                     ((!StartOfRound.Instance.currentLevel.spawnEnemiesAndScrap && !StartOfRound.Instance.currentLevel.planetHasTime) &&
+                     (!StartOfRound.Instance.currentLevel.spawnEnemiesAndScrap &&
+                      !StartOfRound.Instance.currentLevel.planetHasTime &&
                       StartOfRound.Instance.shipHasLanded)))
                     return true;
 
@@ -85,6 +87,12 @@ namespace ReadyCompany
             // There's a weird bug where sometimes the input system isn't initialized at Awake()
             // So we defer it to the first scene load instead
             SceneManager.sceneLoaded += OnSceneLoaded;
+            ReadyStatusChanged += OnReadyStatusChanged;
+        }
+
+        private static void OnReadyStatusChanged(ReadyMap? oldValue, ReadyMap newValue)
+        {
+            PopupReadyStatus(newValue);
         }
 
         private static void OnSceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
@@ -163,18 +171,20 @@ namespace ReadyCompany
                 return;
             }
 
-            ReadyCompany.Logger.LogDebug($"Readyup about to change: {newValue}");
-            ReadyStatusChangedReal(newValue);
+            ReadyCompany.Logger.LogDebug($"Readyup about to change: {oldValue}");
+            ReadyStatusChangedReal(oldValue, newValue);
         }
 
-        internal static void ReadyStatusChangedReal(ReadyMap newValue)
+        internal static void ReadyStatusChangedReal(ReadyMap? oldValue, ReadyMap newValue)
         {
             if (StartOfRound.Instance == null || HUDManager.Instance == null)
                 return;
 
             ReadyCompany.Logger.LogDebug($"Readyup changed: {newValue}");
-            PopupReadyStatus(newValue);
-            ReadyStatusChanged?.Invoke(newValue);
+
+            ReadyStatusUpdated?.Invoke(newValue);
+            if (!newValue.StateEquals(oldValue))
+                ReadyStatusChanged?.Invoke(oldValue, newValue);
         }
 
         internal static void ForceReadyStatusChanged()
@@ -183,7 +193,7 @@ namespace ReadyCompany
                 return;
             
             ShouldPlaySound = false;
-            ReadyStatusChangedReal(ReadyStatus.Value);
+            ReadyStatusChangedReal(null, ReadyStatus.Value);
         }
 
         internal static void PopupReadyStatus(ReadyMap map)
@@ -195,26 +205,24 @@ namespace ReadyCompany
             if (IsLobbyReady(map) && ReadyCompany.Config.CustomLobbyReadySounds.Count > 0)
                 sfx = ReadyCompany.Config.CustomLobbyReadySounds.ToArray();
             else
-                sfx = ReadyCompany.Config.CustomPopupSounds.Count > 0
-                    ? ReadyCompany.Config.CustomPopupSounds.ToArray()
-                    : HUDManager.Instance.tipsSFX;
+                sfx = ReadyCompany.Config.CustomPopupSounds.ToArray();
 
             var statusText = GetBriefStatusDisplay(map);
             CustomDisplayTip(IsLobbyReady() ? "Lobby is Ready!" : "Lobby not ready yet!", statusText, sfx);
             CustomDisplaySpectatorTip(statusText);
         }
 
-        private static void CustomDisplaySpectatorTip(string body)
+        internal static void CustomDisplaySpectatorTip(string body)
         {
             var hud = HUDManager.Instance;
-            if (hud == null)
+            if (hud is null)
                 return;
 
             hud.spectatorTipText.text = body;
             hud.spectatorTipText.enabled = true;
         }
 
-        private static void CustomDisplayTip(string headerText, string bodyText, AudioClip[]? sfx = null)
+        internal static void CustomDisplayTip(string headerText, string bodyText, AudioClip[]? sfx = null, bool warning = false)
         {
             var hud = HUDManager.Instance;
             if (hud is null)
@@ -224,14 +232,13 @@ namespace ReadyCompany
             {
                 hud.tipsPanelHeader.text = headerText;
                 hud.tipsPanelBody.text = bodyText;
-                hud.tipsPanelAnimator.SetTrigger("TriggerHint");
+                hud.tipsPanelAnimator.SetTrigger(warning ? "TriggerWarning" : "TriggerHint");
             }
 
             if (ReadyCompany.Config.PlaySound.Value && ShouldPlaySound)
             {
-                sfx ??= hud.tipsSFX;
-                if (sfx.Length <= 0)
-                    sfx = hud.tipsSFX;
+                if (sfx == null || sfx.Length <= 0)
+                    sfx = warning ? hud.warningSFX : hud.tipsSFX;
                 Utils.PlayRandomClip(hud.UIAudio, sfx, ReadyCompany.Config.SoundVolume.Value / 100f);
             }
 
@@ -303,9 +310,7 @@ namespace ReadyCompany
                     {
                         var playerScript = roundManager.allPlayerScripts[playerId];
                         if (playerScript.isPlayerDead && !playerScript.isPlayerControlled)
-                        {
                             _playerReadyMap[playerId] = true;
-                        }
                     }
                 }
 
